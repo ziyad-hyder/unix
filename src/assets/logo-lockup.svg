@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56">
+  <rect x="0" y="4" width="48" height="48" rx="11" fill="#173541"/>
+  <g transform="translate(0,4) scale(0.48)">
+    <circle cx="50" cy="31" r="9" fill="#B49796" opacity="0.18"/>
+    <line x1="50" y1="31" x2="33" y2="76" stroke="#F5F1EA" stroke-width="7" stroke-linecap="round"/>
+    <line x1="50" y1="31" x2="67" y2="76" stroke="#85ADBB" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="33" cy="76" r="4" fill="#F5F1EA"/>
+    <circle cx="67" cy="76" r="4" fill="#85ADBB"/>
+    <circle cx="50" cy="31" r="5.5" fill="#B49796"/>
+  </g>
+  <text x="62" y="37" font-family="Inter, Arial, sans-serif" font-weight="800" font-size="28" fill="#173541">Uni<tspan fill="#B49796">X</tspan></text>
+</svg>

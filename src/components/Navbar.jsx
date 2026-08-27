@@ -1,6 +1,26 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Layers, CheckCircle2 } from 'lucide-react';
+import { LogOut, CheckCircle2 } from 'lucide-react';
+
+export function UniXLogoMark({ className = "w-9 h-9" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="UniX Mark"
+    >
+      <rect width="100" height="100" rx="22" fill="#173541" />
+      <circle cx="50" cy="31" r="9" fill="#B49796" opacity="0.18" />
+      <line x1="50" y1="31" x2="33" y2="76" stroke="#F5F1EA" strokeWidth="7" strokeLinecap="round" />
+      <line x1="50" y1="31" x2="67" y2="76" stroke="#85ADBB" strokeWidth="7" strokeLinecap="round" />
+      <circle cx="33" cy="76" r="4" fill="#F5F1EA" />
+      <circle cx="67" cy="76" r="4" fill="#85ADBB" />
+      <circle cx="50" cy="31" r="5.5" fill="#B49796" />
+    </svg>
+  );
+}
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -11,9 +31,7 @@ export default function Navbar() {
         
         {/* Brand Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-brand-primary flex items-center justify-center text-white">
-            <Layers className="w-5 h-5" />
-          </div>
+          <UniXLogoMark className="w-9 h-9 flex-shrink-0" />
           <div>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold tracking-tight text-ink-primary">

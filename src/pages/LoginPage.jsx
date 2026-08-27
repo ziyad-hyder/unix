@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   School, User, Lock, KeyRound, ArrowRight, CheckCircle, 
-  AlertCircle, RefreshCw, Layers, Eye, EyeOff, CheckCircle2 
+  AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2 
 } from 'lucide-react';
+import { UniXLogoMark } from '../components/Navbar';
 
 const CAMPUSES = [
   { id: 'kitsw', name: 'KITS Warangal', domain: '@kitsw.ac.in' },
@@ -185,8 +186,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-brand-bg flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {/* Top Header / Branding */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-brand-primary text-white mb-3">
-          <Layers className="w-5 h-5" />
+        <div className="flex justify-center mb-3">
+          <UniXLogoMark className="w-11 h-11" />
         </div>
         <h2 className="text-xl font-bold tracking-tight text-ink-primary">
           Welcome to <span className="text-brand-secondary">UniX</span>
