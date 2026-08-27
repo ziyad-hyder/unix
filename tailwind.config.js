@@ -8,15 +8,26 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          900: '#312e81',
+          primary: '#173541',
+          secondary: '#557C86',
+          tertiary: '#7299A8',
+          light: '#85ADBB',
+          accent: '#B49796',
+          bg: '#FAFAF8',
+        },
+        ink: {
+          primary: '#173541',
+          secondary: '#557C86',
         }
+      },
+      borderRadius: {
+        'tight': '4px',
+        'control': '8px',
+        'surface': '12px',
+        'container': '16px',
       }
     },
   },
   plugins: [],
 }
+

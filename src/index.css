@@ -4,6 +4,12 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-brand-bg text-ink-primary antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  ::selection {
+    @apply bg-brand-secondary/20 text-brand-primary;
   }
 }
+

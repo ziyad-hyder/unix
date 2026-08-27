@@ -78,10 +78,30 @@ export default function ListingDetailModal({
   const isOwner = user && (user.id === listing.owner?.id || user.email === listing.owner?.email);
 
   const typeConfig = {
-    SELL: { label: 'SELL', ctaText: 'Request to Buy', badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200/80', dot: 'bg-emerald-500' },
-    RENT: { label: 'RENT', ctaText: 'Request to Rent', badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200/80', dot: 'bg-indigo-500' },
-    SWAP: { label: 'SWAP', ctaText: 'Request to Swap', badgeBg: 'bg-amber-50 text-amber-700 border-amber-200/80', dot: 'bg-amber-500' },
-  }[listing.type] || { label: listing.type, ctaText: 'Request Item', badgeBg: 'bg-slate-50 text-slate-700', dot: 'bg-slate-500' };
+    SELL: { 
+      label: 'SELL', 
+      ctaText: 'Request to Buy', 
+      badgeBg: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20', 
+      dot: 'bg-brand-primary' 
+    },
+    RENT: { 
+      label: 'RENT', 
+      ctaText: 'Request to Rent', 
+      badgeBg: 'bg-brand-secondary/15 text-brand-primary border-brand-secondary/30', 
+      dot: 'bg-brand-secondary' 
+    },
+    SWAP: { 
+      label: 'SWAP', 
+      ctaText: 'Request to Swap', 
+      badgeBg: 'bg-brand-accent/25 text-brand-primary border-brand-accent/45', 
+      dot: 'bg-brand-accent' 
+    },
+  }[listing.type] || { 
+    label: listing.type, 
+    ctaText: 'Request Item', 
+    badgeBg: 'bg-brand-primary/5 text-ink-primary border-brand-secondary/20', 
+    dot: 'bg-brand-secondary' 
+  };
 
   // 1. Transaction Request (Buyer / Borrower)
   const handleCreateRequest = async () => {
@@ -187,19 +207,19 @@ export default function ListingDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-xl border border-slate-200 overflow-hidden relative animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-primary/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6">
+      <div className="bg-white w-full max-w-lg rounded-2xl shadow-lg border border-brand-secondary/25 overflow-hidden relative animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-brand-secondary/15 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {mode === 'VIEW' ? (
               <>
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${typeConfig.badgeBg}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide border ${typeConfig.badgeBg}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${typeConfig.dot}`} />
                   {typeConfig.label}
                 </span>
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded">
                   {listing.category}
                 </span>
               </>
@@ -208,14 +228,14 @@ export default function ListingDetailModal({
                 <button
                   type="button"
                   onClick={() => setMode('VIEW')}
-                  className="text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                  className="text-ink-secondary hover:text-ink-primary transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </button>
-                <h3 className="text-sm font-bold text-slate-800">Edit Listing</h3>
+                <h3 className="text-sm font-bold text-ink-primary">Edit Listing</h3>
               </div>
             ) : (
-              <h3 className="text-sm font-bold text-rose-600 flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-red-600 flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4" />
                 <span>Confirm Deletion</span>
               </h3>
@@ -224,7 +244,7 @@ export default function ListingDetailModal({
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -232,62 +252,62 @@ export default function ListingDetailModal({
 
         {/* Modal Notifications */}
         {errorMessage && (
-          <div className="mx-6 mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2.5">
+          <div className="mx-6 mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="mx-6 mt-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-start gap-2.5">
-            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="mx-6 mt-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
             <span className="font-medium">{successMessage}</span>
           </div>
         )}
 
         {/* 1. VIEW MODE */}
         {mode === 'VIEW' && (
-          <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+          <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
             <div>
-              <h2 className="text-xl font-extrabold text-slate-900 leading-snug">
+              <h2 className="text-lg font-bold text-ink-primary leading-snug">
                 {listing.title}
               </h2>
-              <p className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
+              <p className="mt-2.5 text-xs text-ink-primary leading-relaxed whitespace-pre-line bg-brand-bg/60 p-3.5 rounded-xl border border-brand-secondary/15">
                 {listing.description}
               </p>
             </div>
 
             {/* Pricing & Terms */}
-            <div className="p-4 rounded-2xl border border-slate-200/90 bg-white shadow-2xs">
-              <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Terms & Pricing</h4>
+            <div className="p-3.5 rounded-xl border border-brand-secondary/20 bg-white">
+              <h4 className="text-[10px] font-bold text-ink-secondary/70 uppercase tracking-wider mb-1.5">Terms & Pricing</h4>
               {listing.type === 'SELL' && (
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-extrabold text-slate-900">
+                  <span className="text-xl font-bold text-ink-primary">
                     ₹{listing.price != null ? Number(listing.price).toLocaleString('en-IN') : '0'}
                   </span>
-                  <span className="text-xs text-slate-500 font-medium">One-time purchase</span>
+                  <span className="text-xs text-ink-secondary font-medium">One-time purchase</span>
                 </div>
               )}
               {listing.type === 'RENT' && (
                 <div className="space-y-1">
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-extrabold text-indigo-700">
+                    <span className="text-xl font-bold text-ink-primary">
                       ₹{listing.rentalRate != null ? Number(listing.rentalRate).toLocaleString('en-IN') : '0'}
                     </span>
-                    <span className="text-xs text-slate-500 font-medium">
+                    <span className="text-xs text-ink-secondary font-medium">
                       / {listing.rentalPeriod ? listing.rentalPeriod.toLowerCase() : 'period'}
                     </span>
                   </div>
                   {listing.depositAmount != null && Number(listing.depositAmount) > 0 && (
-                    <p className="text-xs text-slate-600">
-                      Deposit: <span className="font-semibold text-slate-800">₹{Number(listing.depositAmount).toLocaleString('en-IN')}</span> (Refundable on return)
+                    <p className="text-xs text-ink-secondary">
+                      Deposit: <span className="font-semibold text-ink-primary">₹{Number(listing.depositAmount).toLocaleString('en-IN')}</span> (Refundable on return)
                     </p>
                   )}
                 </div>
               )}
               {listing.type === 'SWAP' && (
                 <div className="space-y-1">
-                  <p className="text-xs text-slate-700 italic bg-amber-50 p-2.5 rounded-xl border border-amber-100">
+                  <p className="text-xs text-ink-primary italic bg-brand-accent/15 p-2.5 rounded-lg border border-brand-accent/30">
                     "{listing.swapPreferences || 'Open to relevant peer swaps'}"
                   </p>
                 </div>
@@ -295,40 +315,40 @@ export default function ListingDetailModal({
             </div>
 
             {/* Owner Info */}
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 flex items-center justify-between text-xs">
+            <div className="p-3.5 rounded-xl bg-brand-bg/60 border border-brand-secondary/15 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold">
-                  <User className="w-4 h-4" />
+                <div className="w-7 h-7 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold">
+                  <User className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">{listing.owner?.fullName || 'Campus Peer'}</p>
-                  <p className="text-[11px] text-slate-400 font-mono">{listing.owner?.email}</p>
+                  <p className="font-semibold text-ink-primary">{listing.owner?.fullName || 'Campus Peer'}</p>
+                  <p className="text-[11px] text-ink-secondary/70 font-mono">{listing.owner?.email}</p>
                 </div>
               </div>
-              <div className="text-right text-[11px] text-slate-400">
-                <p>Listed on</p>
-                <p className="font-mono text-slate-600">{formatDate(listing.createdAt)}</p>
+              <div className="text-right text-[11px] text-ink-secondary/70">
+                <p>Listed</p>
+                <p className="font-mono text-ink-secondary">{formatDate(listing.createdAt)}</p>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="pt-3 border-t border-slate-100">
+            <div className="pt-2 border-t border-brand-secondary/15">
               {isOwner ? (
-                <div className="p-3.5 rounded-2xl bg-slate-100 border border-slate-200 text-center">
-                  <p className="text-xs font-semibold text-slate-700 mb-2.5">You are the owner of this listing</p>
-                  <div className="flex items-center justify-center gap-3">
+                <div className="p-3 rounded-xl bg-brand-bg/60 border border-brand-secondary/20 text-center">
+                  <p className="text-xs font-semibold text-ink-secondary mb-2">You are the owner of this listing</p>
+                  <div className="flex items-center justify-center gap-2.5">
                     <button
                       onClick={() => setMode('EDIT')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-ink-primary bg-white hover:bg-brand-primary/5 border border-brand-secondary/25 transition-colors cursor-pointer"
                     >
-                      <Edit3 className="w-3.5 h-3.5 text-brand-600" />
+                      <Edit3 className="w-3.5 h-3.5 text-brand-secondary" />
                       <span>Edit Listing</span>
                     </button>
                     <button
                       onClick={() => setMode('DELETE_CONFIRM')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-white hover:bg-rose-50 border border-rose-200 shadow-2xs transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-red-600 bg-white hover:bg-red-50 border border-red-200 transition-colors cursor-pointer"
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                      <Trash2 className="w-3.5 h-3.5 text-red-600" />
                       <span>Delete Listing</span>
                     </button>
                   </div>
@@ -337,22 +357,22 @@ export default function ListingDetailModal({
                 <button
                   onClick={handleCreateRequest}
                   disabled={loading || requestSent}
-                  className={`w-full inline-flex items-center justify-center gap-2 py-3 px-5 rounded-2xl text-sm font-semibold transition-all ${
+                  className={`w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-semibold transition-colors ${
                     requestSent
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 cursor-not-allowed shadow-2xs'
-                      : 'text-white bg-brand-600 hover:bg-brand-700 active:bg-brand-800 shadow-sm cursor-pointer'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 cursor-not-allowed'
+                      : 'text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary cursor-pointer'
                   }`}
                 >
                   {loading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   ) : requestSent ? (
                     <>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Request Sent</span>
                     </>
                   ) : (
                     <>
-                      <Send className="w-4 h-4" />
+                      <Send className="w-3.5 h-3.5" />
                       <span>{typeConfig.ctaText}</span>
                     </>
                   )}
@@ -366,24 +386,24 @@ export default function ListingDetailModal({
         {mode === 'EDIT' && (
           <form onSubmit={handleSaveEdit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Item Title *</label>
+              <label className="block text-xs font-semibold text-ink-primary mb-1">Item Title <span className="text-red-600">*</span></label>
               <input
                 type="text"
                 required
                 maxLength={150}
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="block w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50/50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 font-medium"
+                className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Category *</label>
+                <label className="block text-xs font-semibold text-ink-primary mb-1">Category <span className="text-red-600">*</span></label>
                 <select
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value)}
-                  className="block w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50/50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 font-medium cursor-pointer"
+                  className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
                 >
                   {CATEGORIES.map((cat) => (
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -392,11 +412,11 @@ export default function ListingDetailModal({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Listing Type *</label>
+                <label className="block text-xs font-semibold text-ink-primary mb-1">Listing Type <span className="text-red-600">*</span></label>
                 <select
                   value={editType}
                   onChange={(e) => setEditType(e.target.value)}
-                  className="block w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50/50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 font-medium cursor-pointer"
+                  className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
                 >
                   <option value="RENT">RENT</option>
                   <option value="SELL">SELL</option>
@@ -406,8 +426,8 @@ export default function ListingDetailModal({
             </div>
 
             {editType === 'SELL' && (
-              <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100">
-                <label className="block text-xs font-semibold text-emerald-900 mb-1">Selling Price (₹ INR) *</label>
+              <div className="p-3.5 rounded-xl bg-brand-primary/5 border border-brand-primary/15">
+                <label className="block text-xs font-semibold text-ink-primary mb-1">Selling Price (INR) <span className="text-red-600">*</span></label>
                 <input
                   type="number"
                   step="0.01"
@@ -415,16 +435,16 @@ export default function ListingDetailModal({
                   required
                   value={editPrice}
                   onChange={(e) => setEditPrice(e.target.value)}
-                  className="block w-full px-3 py-2 text-sm border border-emerald-200 rounded-xl bg-white text-slate-900 font-mono font-semibold"
+                  className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono font-semibold"
                 />
               </div>
             )}
 
             {editType === 'RENT' && (
-              <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-3">
+              <div className="p-3.5 rounded-xl bg-brand-secondary/5 border border-brand-secondary/20 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-indigo-900 mb-1">Rental Rate (₹ INR) *</label>
+                    <label className="block text-xs font-semibold text-ink-primary mb-1">Rental Rate (INR) <span className="text-red-600">*</span></label>
                     <input
                       type="number"
                       step="0.01"
@@ -432,15 +452,15 @@ export default function ListingDetailModal({
                       required
                       value={editRentalRate}
                       onChange={(e) => setEditRentalRate(e.target.value)}
-                      className="block w-full px-3 py-2 text-sm border border-indigo-200 rounded-xl bg-white text-slate-900 font-mono font-semibold"
+                      className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-indigo-900 mb-1">Period Unit *</label>
+                    <label className="block text-xs font-semibold text-ink-primary mb-1">Period Unit <span className="text-red-600">*</span></label>
                     <select
                       value={editRentalPeriod}
                       onChange={(e) => setEditRentalPeriod(e.target.value)}
-                      className="block w-full px-3 py-2 text-sm border border-indigo-200 rounded-xl bg-white text-slate-900 font-medium cursor-pointer"
+                      className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-medium cursor-pointer"
                     >
                       {RENTAL_PERIODS.map((p) => (
                         <option key={p.value} value={p.value}>{p.label}</option>
@@ -449,56 +469,56 @@ export default function ListingDetailModal({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-indigo-900 mb-1">Refundable Deposit (₹ INR)</label>
+                  <label className="block text-xs font-semibold text-ink-primary mb-1">Refundable Deposit (INR)</label>
                   <input
                     type="number"
                     step="0.01"
                     min="0"
                     value={editDepositAmount}
                     onChange={(e) => setEditDepositAmount(e.target.value)}
-                    className="block w-full px-3 py-2 text-sm border border-indigo-200 rounded-xl bg-white text-slate-900 font-mono"
+                    className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono"
                   />
                 </div>
               </div>
             )}
 
             {editType === 'SWAP' && (
-              <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100">
-                <label className="block text-xs font-semibold text-amber-900 mb-1">Swap Preferences</label>
+              <div className="p-3.5 rounded-xl bg-brand-accent/15 border border-brand-accent/35">
+                <label className="block text-xs font-semibold text-ink-primary mb-1">Swap Preferences</label>
                 <input
                   type="text"
                   maxLength={500}
                   value={editSwapPreferences}
                   onChange={(e) => setEditSwapPreferences(e.target.value)}
-                  className="block w-full px-3 py-2 text-sm border border-amber-200 rounded-xl bg-white text-slate-900"
+                  className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Description *</label>
+              <label className="block text-xs font-semibold text-ink-primary mb-1">Description <span className="text-red-600">*</span></label>
               <textarea
                 required
                 rows={3}
                 maxLength={2000}
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                className="block w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50/50 text-slate-900 resize-none"
+                className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary resize-none"
               />
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+            <div className="pt-3 border-t border-brand-secondary/15 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setMode('VIEW')}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                className="px-3.5 py-2 text-xs font-semibold text-ink-secondary hover:bg-brand-primary/5 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 active:bg-brand-800 shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer"
               >
                 {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 <span>Save Changes</span>
@@ -510,17 +530,17 @@ export default function ListingDetailModal({
         {/* 3. DELETE CONFIRMATION MODE */}
         {mode === 'DELETE_CONFIRM' && (
           <div className="p-6 space-y-4">
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs leading-relaxed">
-              <p className="font-bold text-sm mb-1 text-rose-900">Are you sure you want to delete this listing?</p>
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs leading-relaxed">
+              <p className="font-bold text-xs mb-1 text-red-900">Are you sure you want to delete this listing?</p>
               This item will be permanently removed from the active campus marketplace.
             </div>
 
-            <div className="pt-2 flex items-center justify-end gap-3">
+            <div className="pt-2 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setMode('VIEW')}
                 disabled={loading}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                className="px-3.5 py-2 text-xs font-semibold text-ink-secondary hover:bg-brand-primary/5 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -528,7 +548,7 @@ export default function ListingDetailModal({
                 type="button"
                 onClick={handleDeleteListing}
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition-colors cursor-pointer"
               >
                 {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 <span>Yes, Delete Listing</span>
@@ -541,3 +561,4 @@ export default function ListingDetailModal({
     </div>
   );
 }
+
