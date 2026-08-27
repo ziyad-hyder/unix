@@ -3,13 +3,15 @@ import { getCookie } from '../utils/cookies';
 
 // Create base Axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '',
+  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '',
   withCredentials: true, // Crucial: Always send/receive httpOnly JWT cookies cross-origin
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
 });
+
+console.log("API base URL:", import.meta.env.VITE_API_URL);
 
 // Request interceptor: Inject XSRF-TOKEN header for state-changing requests
 api.interceptors.request.use(
