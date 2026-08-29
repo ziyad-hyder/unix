@@ -15,9 +15,11 @@ export const AuthProvider = ({ children }) => {
       if (res.data?.success && res.data?.data) {
         setUser(res.data.data);
       } else {
+        localStorage.removeItem('unix_token');
         setUser(null);
       }
     } catch {
+      localStorage.removeItem('unix_token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -35,7 +37,11 @@ export const AuthProvider = ({ children }) => {
       password,
     });
     if (res.data?.success && res.data?.data) {
-      setUser(res.data.data);
+      const userData = res.data.data;
+      if (userData.token) {
+        localStorage.setItem('unix_token', userData.token);
+      }
+      setUser(userData);
     }
     return res.data;
   };
@@ -69,7 +75,11 @@ export const AuthProvider = ({ children }) => {
       rawPassword,
     });
     if (res.data?.success && res.data?.data) {
-      setUser(res.data.data);
+      const userData = res.data.data;
+      if (userData.token) {
+        localStorage.setItem('unix_token', userData.token);
+      }
+      setUser(userData);
     }
     return res.data;
   };
@@ -81,6 +91,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.warn('Logout API error:', err);
     } finally {
+      localStorage.removeItem('unix_token');
       setUser(null);
     }
   };
@@ -89,7 +100,8 @@ export const AuthProvider = ({ children }) => {
   const updateUserPhone = async (phone) => {
     const res = await api.put('/api/users/me/phone', { phone });
     if (res.data?.success && res.data?.data) {
-      setUser(res.data.data);
+      const updatedUser = res.data.data;
+      setUser((prev) => (prev ? { ...prev, ...updatedUser } : updatedUser));
     }
     return res.data;
   };
