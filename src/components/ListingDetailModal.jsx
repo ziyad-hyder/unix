@@ -268,6 +268,16 @@ export default function ListingDetailModal({
         {/* 1. VIEW MODE */}
         {mode === 'VIEW' && (
           <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+            {listing.imageUrl && (
+              <div className="rounded-xl overflow-hidden border border-brand-secondary/20 bg-brand-bg/60 max-h-56">
+                <img
+                  src={listing.imageUrl}
+                  alt={listing.title}
+                  className="w-full h-full max-h-56 object-cover"
+                />
+              </div>
+            )}
+
             <div>
               <h2 className="text-lg font-bold text-ink-primary leading-snug">
                 {listing.title}

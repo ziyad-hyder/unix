@@ -2,7 +2,7 @@ import React from 'react';
 import { RefreshCw, Clock, User as UserIcon, ArrowUpRight } from 'lucide-react';
 
 export default function ListingCard({ listing, onClick }) {
-  const { title, description, type, category, price, rentalRate, rentalPeriod, depositAmount, swapPreferences, owner, createdAt } = listing;
+  const { title, description, type, category, price, rentalRate, rentalPeriod, depositAmount, swapPreferences, imageUrl, owner, createdAt } = listing;
 
   const typeConfig = {
     SELL: {
@@ -35,9 +35,21 @@ export default function ListingCard({ listing, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-xl border border-brand-secondary/20 p-5 hover:border-brand-tertiary transition-colors flex flex-col justify-between h-full group cursor-pointer text-left"
+      className="bg-white rounded-xl border border-brand-secondary/20 p-5 hover:border-brand-tertiary transition-colors flex flex-col justify-between h-full group cursor-pointer text-left overflow-hidden"
     >
       <div>
+        {/* Optional Listing Image */}
+        {imageUrl && (
+          <div className="mb-3.5 -mt-1 -mx-1 rounded-lg overflow-hidden border border-brand-secondary/15 bg-brand-bg/50">
+            <img
+              src={imageUrl}
+              alt={title}
+              loading="lazy"
+              className="w-full h-36 object-cover group-hover:scale-[1.02] transition-transform duration-200"
+            />
+          </div>
+        )}
+
         {/* Top Header: Type & Category Badges */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide border ${typeConfig.bg}`}>

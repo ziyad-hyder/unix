@@ -12,6 +12,14 @@ const api = axios.create({
 
 console.log("API base URL:", import.meta.env.VITE_API_URL);
 
+// Request interceptor: If payload is FormData, delete default Content-Type header so browser appends proper boundary
+api.interceptors.request.use((config) => {
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+  return config;
+});
+
 // Response interceptor: Extract structured backend error message
 api.interceptors.response.use(
   (response) => response,

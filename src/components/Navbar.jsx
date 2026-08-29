@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, CheckCircle2 } from 'lucide-react';
+import { LogOut, CheckCircle2, User } from 'lucide-react';
+import ProfileModal from './ProfileModal';
 
 export function UniXLogoMark({ className = "w-9 h-9" }) {
   return (
@@ -24,52 +25,75 @@ export function UniXLogoMark({ className = "w-9 h-9" }) {
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-brand-bg/95 backdrop-blur-md border-b border-brand-secondary/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        
-        {/* Brand Logo */}
-        <div className="flex items-center gap-3">
-          <UniXLogoMark className="w-9 h-9 flex-shrink-0" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold tracking-tight text-ink-primary">
-                Uni<span className="text-brand-secondary">X</span>
-              </span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider bg-brand-primary/5 text-ink-primary border border-brand-secondary/25">
-                KITSW
-              </span>
-            </div>
-            <p className="text-[11px] text-ink-secondary font-medium leading-none">Campus Marketplace</p>
-          </div>
-        </div>
-
-        {/* User Info & Actions */}
-        {user && (
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex flex-col items-end">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-ink-primary">{user.fullName || user.email}</span>
-                {user.verified && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" title="Verified Campus Student" />
-                )}
+    <>
+      <header className="sticky top-0 z-40 bg-brand-bg/95 backdrop-blur-md border-b border-brand-secondary/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          
+          {/* Brand Logo */}
+          <div className="flex items-center gap-3">
+            <UniXLogoMark className="w-9 h-9 flex-shrink-0" />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold tracking-tight text-ink-primary">
+                  Uni<span className="text-brand-secondary">X</span>
+                </span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider bg-brand-primary/5 text-ink-primary border border-brand-secondary/25">
+                  KITSW
+                </span>
               </div>
-              <span className="text-[11px] text-ink-secondary/80 font-mono">{user.email}</span>
+              <p className="text-[11px] text-ink-secondary font-medium leading-none">Campus Marketplace</p>
             </div>
-
-            <button
-              onClick={logout}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 transition-colors border border-brand-secondary/25"
-              title="Log out"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Log out</span>
-            </button>
           </div>
-        )}
-      </div>
-    </header>
+
+          {/* User Info & Actions */}
+          {user && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsProfileOpen(true)}
+                className="hidden sm:flex flex-col items-end hover:opacity-80 transition-opacity text-left cursor-pointer p-1 rounded-lg"
+                title="View & edit profile"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-ink-primary">{user.fullName || user.email}</span>
+                  {user.verified && (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" title="Verified Campus Student" />
+                  )}
+                </div>
+                <span className="text-[11px] text-ink-secondary/80 font-mono">{user.email}</span>
+              </button>
+
+              <button
+                onClick={() => setIsProfileOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 transition-colors border border-brand-secondary/25 cursor-pointer"
+                title="My Profile & WhatsApp"
+              >
+                <User className="w-3.5 h-3.5 text-brand-secondary" />
+                <span>Profile</span>
+              </button>
+
+              <button
+                onClick={logout}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 transition-colors border border-brand-secondary/25 cursor-pointer"
+                title="Log out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Log out</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+      />
+    </>
   );
 }
+
 

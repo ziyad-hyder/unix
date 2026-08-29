@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   School, User, Lock, KeyRound, ArrowRight, CheckCircle, 
-  AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2 
+  AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2, Phone, MessageSquare, SkipForward 
 } from 'lucide-react';
 import { UniXLogoMark } from '../components/Navbar';
 
@@ -12,7 +12,7 @@ const CAMPUSES = [
 ];
 
 export default function LoginPage() {
-  const { isAuthenticated, login, registerRequestOtp, registerVerifyOtp, registerConfirm } = useAuth();
+  const { isAuthenticated, login, registerRequestOtp, registerVerifyOtp, registerConfirm, updateUserPhone } = useAuth();
   const navigate = useNavigate();
 
   // Mode: 'SIGN_IN' | 'SIGN_UP'
@@ -24,7 +24,7 @@ export default function LoginPage() {
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
 
-  // Sign Up state: 1 (Details) -> 2 (Verify OTP) -> 3 (Create Password)
+  // Sign Up state: 1 (Details) -> 2 (Verify OTP) -> 3 (Create Password) -> 4 (Optional WhatsApp)
   const [signUpStep, setSignUpStep] = useState(1);
   const [signUpCampus, setSignUpCampus] = useState(CAMPUSES[0].id);
   const [signUpRollNumber, setSignUpRollNumber] = useState('');
@@ -33,6 +33,7 @@ export default function LoginPage() {
   const [signUpOtp, setSignUpOtp] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState('');
+  const [signUpPhone, setSignUpPhone] = useState('');
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
 
   // Feedback & Rate Limiting
@@ -45,10 +46,10 @@ export default function LoginPage() {
   const selectedSignUpCampus = CAMPUSES.find((c) => c.id === signUpCampus) || CAMPUSES[0];
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && signUpStep !== 4) {
       navigate('/', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, signUpStep, navigate]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -174,12 +175,41 @@ export default function LoginPage() {
     try {
       setLoading(true);
       await registerConfirm(cleanRoll, signUpEmail, signUpFullName.trim(), signUpOtp.trim(), signUpPassword);
-      navigate('/', { replace: true });
+      setSuccessMessage('Account created! Add your WhatsApp number to make connecting easier.');
+      setSignUpStep(4);
     } catch (err) {
       setErrorMessage(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // 5. Handle Sign Up Step 4: Save WhatsApp Phone & Go to Dashboard
+  const handleSavePhoneAndFinish = async (e) => {
+    e.preventDefault();
+    resetErrors();
+
+    const cleanPhone = signUpPhone.trim();
+    if (cleanPhone && !/^(\+?[0-9\s\-]{7,20})$/.test(cleanPhone)) {
+      setErrorMessage('Please enter a valid phone number or skip.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      if (cleanPhone) {
+        await updateUserPhone(cleanPhone);
+      }
+      navigate('/', { replace: true });
+    } catch (err) {
+      setErrorMessage(err.message || 'Failed to update phone number.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipPhone = () => {
+    navigate('/', { replace: true });
   };
 
   return (
@@ -360,18 +390,22 @@ export default function LoginPage() {
           {authMode === 'SIGN_UP' && (
             <div>
               {/* Step indicator */}
-              <div className="flex items-center justify-center gap-2 mb-5">
+              <div className="flex items-center justify-center gap-1.5 mb-5">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                   signUpStep >= 1 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
                 }`}>1</div>
-                <div className={`h-0.5 w-6 ${signUpStep >= 2 ? 'bg-brand-primary' : 'bg-brand-secondary/20'}`} />
+                <div className={`h-0.5 w-4 ${signUpStep >= 2 ? 'bg-brand-primary' : 'bg-brand-secondary/20'}`} />
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                   signUpStep >= 2 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
                 }`}>2</div>
-                <div className={`h-0.5 w-6 ${signUpStep >= 3 ? 'bg-brand-primary' : 'bg-brand-secondary/20'}`} />
+                <div className={`h-0.5 w-4 ${signUpStep >= 3 ? 'bg-brand-primary' : 'bg-brand-secondary/20'}`} />
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                   signUpStep >= 3 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
                 }`}>3</div>
+                <div className={`h-0.5 w-4 ${signUpStep >= 4 ? 'bg-brand-primary' : 'bg-brand-secondary/20'}`} />
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                  signUpStep >= 4 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
+                }`}>4</div>
               </div>
 
               {/* STEP 1: Details */}
@@ -603,6 +637,66 @@ export default function LoginPage() {
                       className="text-xs text-ink-secondary hover:text-ink-primary font-medium cursor-pointer"
                     >
                       Back to verification code
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* STEP 4: Optional WhatsApp Contact Number */}
+              {signUpStep === 4 && (
+                <form onSubmit={handleSavePhoneAndFinish} className="space-y-4">
+                  <div className="text-center pb-1">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-semibold mb-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Account Ready</span>
+                    </div>
+                    <h3 className="text-sm font-bold text-ink-primary">Add Your WhatsApp Number</h3>
+                    <p className="text-xs text-ink-secondary mt-1">
+                      Makes connecting with students seamless once a request is accepted.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-ink-primary mb-1">
+                      WhatsApp Phone Number <span className="text-ink-secondary/70 font-normal">(optional)</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-emerald-700">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="tel"
+                        autoFocus
+                        value={signUpPhone}
+                        onChange={(e) => setSignUpPhone(e.target.value)}
+                        placeholder="+91 9876543210"
+                        className="block w-full pl-9 pr-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-mono font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-brand-primary/5 border border-brand-secondary/15 flex items-start gap-2 text-[11px] text-ink-secondary leading-relaxed">
+                    <MessageSquare className="w-3.5 h-3.5 shrink-0 text-brand-secondary mt-0.5" />
+                    <span>
+                      <strong>Privacy note:</strong> Your phone number is never public. It is revealed strictly when you accept or have a request accepted.
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 transition-colors cursor-pointer"
+                    >
+                      {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : 'Save Number & Enter UniX'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSkipPhone}
+                      className="w-full py-2 px-4 rounded-lg text-xs font-medium text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 transition-colors cursor-pointer"
+                    >
+                      Skip for now
                     </button>
                   </div>
                 </form>

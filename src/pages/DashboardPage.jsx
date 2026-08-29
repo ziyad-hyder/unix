@@ -5,9 +5,10 @@ import Navbar from '../components/Navbar';
 import ListingCard from '../components/ListingCard';
 import CreateListingModal from '../components/CreateListingModal';
 import ListingDetailModal from '../components/ListingDetailModal';
+import ProfileModal from '../components/ProfileModal';
 import { 
   PlusCircle, CheckCircle2, Search, PackageOpen, 
-  Layers, ArrowLeftRight, Check, X, Clock, User, AlertCircle, RefreshCw 
+  Layers, ArrowLeftRight, Check, X, Clock, User, AlertCircle, RefreshCw, MessageCircle 
 } from 'lucide-react';
 
 const CATEGORY_FILTERS = [
@@ -36,6 +37,7 @@ export default function DashboardPage() {
   const [listingsLoading, setListingsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedListingForDetail, setSelectedListingForDetail] = useState(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedType, setSelectedType] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -397,17 +399,33 @@ export default function DashboardPage() {
                             </h3>
                           </div>
 
-                          <span
-                            className={`inline-flex items-center px-2 py-0.2 rounded-full text-[11px] font-bold ${
-                              req.status === 'PENDING'
-                                ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                                : req.status === 'ACCEPTED'
-                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                                : 'bg-red-50 text-red-700 border border-red-200'
-                            }`}
-                          >
-                            {req.status}
-                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.2 rounded-full text-[11px] font-bold ${
+                                req.status === 'PENDING'
+                                  ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                  : req.status === 'ACCEPTED'
+                                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                  : 'bg-red-50 text-red-700 border border-red-200'
+                              }`}
+                            >
+                              {req.status}
+                            </span>
+
+                            {/* WhatsApp Connect Pill Button for Accepted Transaction */}
+                            {req.status === 'ACCEPTED' && req.requester?.phone && (
+                              <a
+                                href={`https://wa.me/${req.requester.phone.replace(/\D/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs"
+                                title={`Chat with ${req.requester.fullName || 'student'} on WhatsApp`}
+                              >
+                                <MessageCircle className="w-3 h-3" />
+                                <span>Connect on WhatsApp</span>
+                              </a>
+                            )}
+                          </div>
                         </div>
 
                         {/* Requester Info */}
@@ -427,7 +445,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Action Buttons for Listing Owner */}
+                      {/* Action Buttons & Contact Status for Listing Owner */}
                       {req.status === 'PENDING' ? (
                         <div className="flex items-center justify-end gap-2 pt-2 border-t border-brand-secondary/15">
                           <button
@@ -453,11 +471,45 @@ export default function DashboardPage() {
                           </button>
                         </div>
                       ) : (
-                        <div className="text-right text-xs font-medium text-ink-secondary pt-2 border-t border-brand-secondary/15">
+                        <div className="pt-2 border-t border-brand-secondary/15 text-xs space-y-1.5">
                           {req.status === 'ACCEPTED' ? (
-                            <span className="text-emerald-800 font-semibold">Accepted - Connect at {req.requester?.email}</span>
+                            <>
+                              <div className="flex items-center justify-between">
+                                <span className="text-emerald-800 font-semibold flex items-center gap-1 text-xs">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>Accepted {req.requester?.phone ? `• ${req.requester.phone}` : `• Connect at ${req.requester?.email}`}</span>
+                                </span>
+                                {req.requester?.phone ? (
+                                  <a
+                                    href={`https://wa.me/${req.requester.phone.replace(/\D/g, '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[11px] font-bold text-emerald-700 hover:underline"
+                                  >
+                                    Open WhatsApp &rarr;
+                                  </a>
+                                ) : (
+                                  <span className="text-[10px] text-ink-secondary/70 italic">
+                                    Ask them to add a phone number in their profile
+                                  </span>
+                                )}
+                              </div>
+                              {!user?.phone && (
+                                <div className="text-[10px] text-brand-secondary flex items-center justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsProfileModalOpen(true)}
+                                    className="underline font-semibold hover:text-brand-primary cursor-pointer"
+                                  >
+                                    Add your number to let others reach you
+                                  </button>
+                                </div>
+                              )}
+                            </>
                           ) : (
-                            <span className="text-red-700">Declined</span>
+                            <div className="text-right">
+                              <span className="text-red-700 font-medium text-xs">Declined</span>
+                            </div>
                           )}
                         </div>
                       )}
@@ -487,40 +539,97 @@ export default function DashboardPage() {
                       key={req.id}
                       className="bg-white rounded-xl border border-brand-secondary/20 p-4 flex flex-col justify-between space-y-3"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded mr-2">
-                            {req.listing?.type}
-                          </span>
-                          <h3 className="font-bold text-ink-primary text-xs inline">
-                            {req.listing?.title}
-                          </h3>
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded mr-2">
+                              {req.listing?.type}
+                            </span>
+                            <h3 className="font-bold text-ink-primary text-xs inline">
+                              {req.listing?.title}
+                            </h3>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.2 rounded-full text-[11px] font-bold ${
+                                req.status === 'PENDING'
+                                  ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                  : req.status === 'ACCEPTED'
+                                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                  : 'bg-red-50 text-red-700 border border-red-200'
+                              }`}
+                            >
+                              {req.status === 'PENDING' ? 'Waiting on Owner' : req.status}
+                            </span>
+
+                            {/* WhatsApp Connect Pill Button for Accepted Transaction */}
+                            {req.status === 'ACCEPTED' && req.listing?.owner?.phone && (
+                              <a
+                                href={`https://wa.me/${req.listing.owner.phone.replace(/\D/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs"
+                                title={`Chat with ${req.listing.owner.fullName || 'owner'} on WhatsApp`}
+                              >
+                                <MessageCircle className="w-3 h-3" />
+                                <span>Connect on WhatsApp</span>
+                              </a>
+                            )}
+                          </div>
                         </div>
 
-                        <span
-                          className={`inline-flex items-center px-2 py-0.2 rounded-full text-[11px] font-bold ${
-                            req.status === 'PENDING'
-                              ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                              : req.status === 'ACCEPTED'
-                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                              : 'bg-red-50 text-red-700 border border-red-200'
-                          }`}
-                        >
-                          {req.status === 'PENDING' ? 'Waiting on Owner' : req.status}
-                        </span>
+                        {/* Owner contact details */}
+                        <div className="mt-3 p-2.5 rounded-lg bg-brand-bg/60 border border-brand-secondary/15 text-xs flex items-center justify-between">
+                          <div>
+                            <p className="text-[10px] text-ink-secondary">Listing Owner</p>
+                            <p className="font-mono text-xs font-semibold text-ink-primary">
+                              {req.listing?.owner?.fullName ? `${req.listing.owner.fullName} (${req.listing.owner.email})` : req.listing?.owner?.email}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] text-ink-secondary">Requested</p>
+                            <p className="font-mono text-xs text-ink-secondary">{formatDate(req.createdAt)}</p>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Owner contact details */}
-                      <div className="p-2.5 rounded-lg bg-brand-bg/60 border border-brand-secondary/15 text-xs flex items-center justify-between">
-                        <div>
-                          <p className="text-[10px] text-ink-secondary">Listing Owner</p>
-                          <p className="font-mono text-xs font-semibold text-ink-primary">{req.listing?.owner?.email}</p>
+                      {/* Outgoing Accepted Info / Prompt */}
+                      {req.status === 'ACCEPTED' && (
+                        <div className="pt-2 border-t border-brand-secondary/15 text-xs space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-emerald-800 font-semibold flex items-center gap-1 text-xs">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Owner {req.listing?.owner?.phone ? `• ${req.listing.owner.phone}` : `• ${req.listing?.owner?.email}`}</span>
+                            </span>
+                            {req.listing?.owner?.phone ? (
+                              <a
+                                href={`https://wa.me/${req.listing.owner.phone.replace(/\D/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] font-bold text-emerald-700 hover:underline"
+                              >
+                                Open WhatsApp &rarr;
+                              </a>
+                            ) : (
+                              <span className="text-[10px] text-ink-secondary/70 italic">
+                                Ask them to add a phone number in their profile
+                              </span>
+                            )}
+                          </div>
+                          {!user?.phone && (
+                            <div className="text-[10px] text-brand-secondary flex items-center justify-end">
+                              <button
+                                type="button"
+                                onClick={() => setIsProfileModalOpen(true)}
+                                className="underline font-semibold hover:text-brand-primary cursor-pointer"
+                              >
+                                Add your number to let others reach you
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <p className="text-[10px] text-ink-secondary">Requested</p>
-                          <p className="font-mono text-xs text-ink-secondary">{formatDate(req.createdAt)}</p>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -531,6 +640,12 @@ export default function DashboardPage() {
         )}
 
       </main>
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
 
       {/* Create Listing Modal */}
       <CreateListingModal

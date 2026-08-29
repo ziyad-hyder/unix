@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../api/api';
-import { X, PlusCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { compressImage } from '../utils/imageUtils';
+import { X, PlusCircle, AlertCircle, RefreshCw, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
 
 const CATEGORIES = [
   { value: 'CALCULATOR', label: 'Scientific Calculator (fx-991CW / ES)' },
@@ -29,6 +30,12 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
   const [depositAmount, setDepositAmount] = useState('');
   const [swapPreferences, setSwapPreferences] = useState('');
 
+  // Image Upload state
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const fileInputRef = useRef(null);
+
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -55,7 +62,37 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
     setRentalPeriod(RENTAL_PERIODS[3].value);
     setDepositAmount('');
     setSwapPreferences('');
+    setImageFile(null);
+    setImagePreview(null);
+    setImageLoading(false);
     setErrorMessage('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Please select a valid image file (JPEG, PNG, WebP).');
+      return;
+    }
+    try {
+      setImageLoading(true);
+      setErrorMessage('');
+      const compressed = await compressImage(file, 800, 0.7);
+      setImageFile(compressed.blob);
+      setImagePreview(compressed.dataUrl);
+    } catch (err) {
+      setErrorMessage(err.message || 'Failed to compress image.');
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSubmit = async (e) => {
@@ -98,7 +135,16 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
 
     try {
       setLoading(true);
-      await api.post('/api/listings', payload);
+      const res = await api.post('/api/listings', payload);
+      const newListing = res.data?.data;
+
+      // If image is attached, upload to Cloudflare R2
+      if (imageFile && newListing?.id) {
+        const formData = new FormData();
+        formData.append('file', imageFile, 'listing-image.jpg');
+        await api.post(`/api/listings/${newListing.id}/image`, formData);
+      }
+
       resetForm();
       onSuccess?.();
       onClose();
@@ -309,6 +355,71 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
               placeholder="Describe item condition, inclusions (cases, clips, batteries), and preferred meetup spot on campus..."
               className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors resize-none"
             />
+          </div>
+
+          {/* Optional Listing Image Picker */}
+          <div>
+            <label className="block text-xs font-semibold text-ink-primary mb-1">
+              Photo of Item <span className="text-ink-secondary/70 font-normal">(optional, single image)</span>
+            </label>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleImageChange}
+              className="hidden"
+              id="listing-image-upload"
+            />
+
+            {!imagePreview ? (
+              <label
+                htmlFor="listing-image-upload"
+                className={`flex flex-col items-center justify-center p-4 border border-dashed border-brand-secondary/30 rounded-xl bg-brand-bg/40 hover:bg-brand-primary/5 hover:border-brand-secondary/60 cursor-pointer transition-colors ${
+                  imageLoading ? 'opacity-50 pointer-events-none' : ''
+                }`}
+              >
+                {imageLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-brand-secondary">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Compressing image...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-8 h-8 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-1.5">
+                      <Upload className="w-4 h-4" />
+                    </div>
+                    <p className="text-xs font-semibold text-ink-primary">Click to attach photo</p>
+                    <p className="text-[10px] text-ink-secondary mt-0.5">JPEG, PNG, WebP • Auto-compressed for campus network</p>
+                  </>
+                )}
+              </label>
+            ) : (
+              <div className="relative rounded-xl border border-brand-secondary/25 overflow-hidden bg-brand-bg/60 p-2 flex items-center gap-3">
+                <img
+                  src={imagePreview}
+                  alt="Listing preview"
+                  className="w-16 h-16 object-cover rounded-lg border border-brand-secondary/20 shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                    <p className="text-xs font-semibold text-ink-primary truncate">Image attached</p>
+                  </div>
+                  <p className="text-[10px] text-ink-secondary mt-0.5">
+                    Compressed: {Math.round((imageFile?.size || 0) / 1024)} KB
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                  title="Remove photo"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}

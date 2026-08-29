@@ -85,6 +85,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 6. Update WhatsApp Phone Number
+  const updateUserPhone = async (phone) => {
+    const res = await api.put('/api/users/me/phone', { phone });
+    if (res.data?.success && res.data?.data) {
+      setUser(res.data.data);
+    }
+    return res.data;
+  };
+
   const value = {
     user,
     loading,
@@ -94,6 +103,7 @@ export const AuthProvider = ({ children }) => {
     registerRequestOtp,
     registerVerifyOtp,
     registerConfirm,
+    updateUserPhone,
     logout,
   };
 
