@@ -3,8 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import { 
   X, CheckCircle2, AlertCircle, RefreshCw, Send, User, 
-  Edit3, Trash2, ArrowLeft, Save, AlertTriangle 
+  Edit3, Trash2, ArrowLeft, Save, AlertTriangle, Clock 
 } from 'lucide-react';
+import { getFriendlyErrorMessage } from '../utils/errors';
 
 const CATEGORIES = [
   { value: 'CALCULATOR', label: 'Scientific Calculator (fx-991CW / ES)' },
@@ -35,6 +36,7 @@ export default function ListingDetailModal({
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [requestSent, setRequestSent] = useState(isAlreadyRequested);
+  const [isAccountFrozen, setIsAccountFrozen] = useState(false);
 
   // Edit form state
   const [editTitle, setEditTitle] = useState('');
@@ -57,6 +59,7 @@ export default function ListingDetailModal({
       setErrorMessage('');
       setSuccessMessage('');
       setRequestSent(isAlreadyRequested);
+      setIsAccountFrozen(false);
 
       if (listing) {
         setEditTitle(listing.title || '');
@@ -115,11 +118,14 @@ export default function ListingDetailModal({
       setRequestSent(true);
       onListingUpdated?.();
     } catch (err) {
-      if (err.message && err.message.toLowerCase().includes('already have an active')) {
+      if (err.errorCode === 'ACCOUNT_FROZEN' || (err.message && err.message.toLowerCase().includes('frozen'))) {
+        setIsAccountFrozen(true);
+        setErrorMessage(getFriendlyErrorMessage(err, 'Your account is frozen due to overdue rentals. You cannot create new requests.'));
+      } else if (err.message && err.message.toLowerCase().includes('already have an active')) {
         setRequestSent(true);
         setSuccessMessage('You already have an active pending request for this item.');
       } else {
-        setErrorMessage(err.message || 'Failed to submit request. Please try again.');
+        setErrorMessage(getFriendlyErrorMessage(err, 'Failed to submit request. Please try again.'));
       }
     } finally {
       setLoading(false);
@@ -171,7 +177,7 @@ export default function ListingDetailModal({
         setSuccessMessage('');
       }, 800);
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to update listing.');
+      setErrorMessage(getFriendlyErrorMessage(err, 'Failed to update listing.'));
     } finally {
       setLoading(false);
     }
@@ -186,7 +192,7 @@ export default function ListingDetailModal({
       onListingUpdated?.();
       onClose();
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to delete listing.');
+      setErrorMessage(getFriendlyErrorMessage(err, 'Failed to delete listing.'));
       setLoading(false);
     }
   };
@@ -364,29 +370,54 @@ export default function ListingDetailModal({
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={handleCreateRequest}
-                  disabled={loading || requestSent}
-                  className={`w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-semibold transition-colors ${
-                    requestSent
-                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 cursor-not-allowed'
-                      : 'text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary cursor-pointer'
-                  }`}
-                >
-                  {loading ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  ) : requestSent ? (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Request Sent</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-3.5 h-3.5" />
-                      <span>{typeConfig.ctaText}</span>
-                    </>
+                <div className="space-y-3">
+                  {/* Rental terms and consequences notice */}
+                  {listing.type === 'RENT' && (
+                    <div className="p-3.5 rounded-control bg-brand-bg border border-brand-secondary/25 text-xs text-ink-primary space-y-1.5 text-left">
+                      <div className="flex items-center gap-1.5 font-semibold text-brand-primary">
+                        <Clock className="w-3.5 h-3.5 text-brand-secondary" />
+                        <span>Rental Terms and Due Date Policy</span>
+                      </div>
+                      <p className="text-[11px] text-ink-secondary leading-relaxed">
+                        The lease clock starts when you confirm physical receipt of the item (or automatically after 12 hours of handover). The item must be returned within the {listing.rentalPeriod ? listing.rentalPeriod.toLowerCase() : 'agreed'} period.
+                      </p>
+                      <div className="pt-1.5 border-t border-brand-secondary/15 text-[11px] text-ink-secondary leading-relaxed">
+                        <span className="font-semibold text-red-700">Important:</span> Items overdue by more than 72 hours will freeze your account, which blocks new requests until the item is returned.
+                      </div>
+                    </div>
                   )}
-                </button>
+
+                  <button
+                    onClick={handleCreateRequest}
+                    disabled={loading || requestSent || isAccountFrozen}
+                    className={`w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-semibold transition-colors ${
+                      isAccountFrozen
+                        ? 'bg-red-50 text-red-700 border border-red-300 cursor-not-allowed'
+                        : requestSent
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 cursor-not-allowed'
+                        : 'text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary cursor-pointer'
+                    }`}
+                  >
+                    {loading ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : isAccountFrozen ? (
+                      <>
+                        <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                        <span>Account Frozen</span>
+                      </>
+                    ) : requestSent ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Request Sent</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>{typeConfig.ctaText}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
             </div>
           </div>

@@ -26,7 +26,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: Extract structured backend error message & clear token on 401
+// Response interceptor: Extract structured backend error & clear token on 401
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -34,15 +34,31 @@ api.interceptors.response.use(
       localStorage.removeItem('unix_token');
     }
 
-    const message =
+    if (import.meta.env.DEV) {
+      console.error('[API Response Error]:', error);
+    }
+
+    const rawMessage =
       error.response?.data?.message ||
       error.response?.data?.error ||
       error.message ||
-      'A network error occurred. Please try again.';
+      '';
+
+    // Never show raw internal exceptions or "No static resource"
+    const isInternalString =
+      rawMessage.toLowerCase().includes('static resource') ||
+      rawMessage.toLowerCase().includes('exception') ||
+      rawMessage.toLowerCase().includes('spring') ||
+      rawMessage.toLowerCase().includes('hibernate');
+
+    const message = isInternalString
+      ? 'The requested operation could not be completed. Please try again.'
+      : (rawMessage || 'A network error occurred. Please try again.');
 
     const customError = {
       status: error.response?.status || 500,
       message,
+      errorCode: error.response?.data?.errorCode || null,
       validationErrors: error.response?.data?.validationErrors || null,
       raw: error,
     };

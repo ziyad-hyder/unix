@@ -10,6 +10,7 @@ import {
   PlusCircle, CheckCircle2, Search, PackageOpen, 
   Layers, ArrowLeftRight, Check, X, Clock, User, AlertCircle, RefreshCw, MessageCircle 
 } from 'lucide-react';
+import { getFriendlyErrorMessage } from '../utils/errors';
 
 const CATEGORY_FILTERS = [
   { id: 'ALL', label: 'All Items' },
@@ -25,6 +26,110 @@ const TYPE_FILTERS = [
   { id: 'SELL', label: 'Buy/Sell' },
   { id: 'SWAP', label: 'Swap' },
 ];
+
+const STATUS_CONFIG = {
+  PENDING: {
+    label: 'PENDING',
+    className: 'bg-amber-50 text-amber-800 border-amber-200',
+  },
+  ACCEPTED: {
+    label: 'ACCEPTED',
+    className: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  },
+  ACTIVE_LEASE: {
+    label: 'ACTIVE LEASE',
+    className: 'bg-sky-50 text-sky-800 border-sky-200',
+  },
+  OVERDUE: {
+    label: 'OVERDUE',
+    className: 'bg-red-50 text-red-800 border-red-200',
+  },
+  RETURN_PENDING: {
+    label: 'RETURN PENDING',
+    className: 'bg-purple-50 text-purple-800 border-purple-200',
+  },
+  COMPLETED: {
+    label: 'COMPLETED',
+    className: 'bg-stone-100 text-stone-700 border-stone-300',
+  },
+  REJECTED: {
+    label: 'DECLINED',
+    className: 'bg-rose-50 text-rose-700 border-rose-200',
+  },
+  CANCELLED: {
+    label: 'CANCELLED',
+    className: 'bg-stone-100 text-stone-600 border-stone-200',
+  },
+  EXPIRED: {
+    label: 'EXPIRED',
+    className: 'bg-stone-100 text-stone-600 border-stone-200',
+  },
+};
+
+function StatusBadge({ status }) {
+  const conf = STATUS_CONFIG[status] || {
+    label: status,
+    className: 'bg-stone-100 text-stone-700 border-stone-200',
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-tight text-[10px] font-bold tracking-wide border ${conf.className}`}
+    >
+      {conf.label}
+    </span>
+  );
+}
+
+function getHoursRemaining(req) {
+  if (!req) return null;
+  if (req.hoursLeft != null) return req.hoursLeft;
+  if (!req.dueAt) return null;
+  const diffMs = new Date(req.dueAt).getTime() - Date.now();
+  return Math.round(diffMs / (1000 * 60 * 60));
+}
+
+function CountdownBadge({ req }) {
+  if (!req) return null;
+  const { status } = req;
+
+  if (status === 'ACTIVE_LEASE') {
+    const hrs = getHoursRemaining(req);
+    if (hrs == null) return null;
+
+    let text = '';
+    if (hrs > 1) {
+      text = `${hrs} hrs left to return`;
+    } else if (hrs === 1) {
+      text = '1 hr left to return';
+    } else if (hrs === 0) {
+      text = '< 1 hr left to return';
+    } else {
+      text = `overdue by ${Math.abs(hrs)} hrs`;
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-tight text-[10px] font-semibold bg-sky-50 text-sky-800 border border-sky-200">
+        <Clock className="w-3 h-3 text-sky-600" />
+        <span>{text}</span>
+      </span>
+    );
+  }
+
+  if (status === 'OVERDUE') {
+    const hrs = getHoursRemaining(req);
+    const overdueHrs = hrs != null ? Math.max(1, Math.abs(hrs)) : 1;
+    const text = overdueHrs === 1 ? 'overdue by 1 hr' : `overdue by ${overdueHrs} hrs`;
+
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-tight text-[10px] font-bold bg-red-50 text-red-800 border border-red-200">
+        <AlertCircle className="w-3 h-3 text-red-600" />
+        <span>{text}</span>
+      </span>
+    );
+  }
+
+  return null;
+}
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -48,6 +153,14 @@ export default function DashboardPage() {
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
+  const [codeInputs, setCodeInputs] = useState({});
+
+  const handleCodeInputChange = (transactionId, value) => {
+    setCodeInputs((prev) => ({
+      ...prev,
+      [transactionId]: value.replace(/\D/g, '').slice(0, 6),
+    }));
+  };
 
   // 1. Fetch Listings
   const fetchListings = useCallback(async () => {
@@ -100,24 +213,83 @@ export default function DashboardPage() {
         type: 'success',
         text: newStatus === 'ACCEPTED' ? 'Request accepted. Listing is now reserved.' : 'Request rejected.',
       });
-      // Refresh both listings and transactions
       fetchTransactions();
       fetchListings();
     } catch (err) {
       setActionMessage({
         type: 'error',
-        text: err.message || 'Failed to update request status.',
+        text: getFriendlyErrorMessage(err, 'Failed to update request status.'),
       });
     } finally {
       setActionLoadingId(null);
     }
   };
 
-  // Pre-calculated requested listing IDs
+  // 4. Handle Action Endpoints (cancel, handoff, confirm-receipt, return, confirm-return, dispute, complete)
+  const handleAction = async (transactionId, action, successText) => {
+    setActionLoadingId(transactionId);
+    setActionMessage(null);
+
+    try {
+      await api.post(`/api/transactions/${transactionId}/${action}`);
+      setActionMessage({
+        type: 'success',
+        text: successText,
+      });
+      fetchTransactions();
+      fetchListings();
+    } catch (err) {
+      setActionMessage({
+        type: 'error',
+        text: getFriendlyErrorMessage(err, `Failed to perform ${action}.`),
+      });
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  // 5. Handle Code Verification (verify-handoff, verify-return)
+  const handleVerifyCode = async (transactionId, endpoint, code, successText) => {
+    if (!code || code.length !== 6) {
+      setActionMessage({
+        type: 'error',
+        text: 'Please enter a valid 6-digit verification code.',
+      });
+      return;
+    }
+
+    setActionLoadingId(transactionId);
+    setActionMessage(null);
+
+    try {
+      await api.post(`/api/transactions/${transactionId}/${endpoint}`, { code });
+      setActionMessage({
+        type: 'success',
+        text: successText,
+      });
+      setCodeInputs((prev) => {
+        const next = { ...prev };
+        delete next[transactionId];
+        return next;
+      });
+      fetchTransactions();
+      fetchListings();
+    } catch (err) {
+      setActionMessage({
+        type: 'error',
+        text: getFriendlyErrorMessage(err, 'Failed to verify code. Please try again.'),
+      });
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  // Pre-calculated requested listing IDs across all active stages
   const requestedListingIds = new Set(
     outgoingRequests
-      .filter((r) => r.status === 'PENDING' || r.status === 'ACCEPTED')
+      .filter((r) => ['PENDING', 'ACCEPTED', 'ACTIVE_LEASE', 'OVERDUE', 'RETURN_PENDING'].includes(r.status))
       .map((r) => r.listing?.id)
+      .filter(Boolean)
   );
 
   const pendingIncomingCount = incomingRequests.filter((r) => r.status === 'PENDING').length;
@@ -138,6 +310,21 @@ export default function DashboardPage() {
       });
     } catch {
       return 'Recently';
+    }
+  };
+
+  const formatDateTime = (isoString) => {
+    if (!isoString) return '';
+    try {
+      return new Date(isoString).toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return '';
     }
   };
 
@@ -338,23 +525,30 @@ export default function DashboardPage() {
             {/* Status Alert Banner */}
             {actionMessage && (
               <div
-                className={`p-3.5 rounded-lg border text-xs flex items-center justify-between ${
+                className={`p-3.5 rounded-tight border text-xs flex items-center justify-between ${
                   actionMessage.type === 'success'
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                     : 'bg-red-50 border-red-200 text-red-800'
                 }`}
               >
-                <span>{actionMessage.text}</span>
+                <div className="flex items-center gap-2">
+                  {actionMessage.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  )}
+                  <span className="font-medium">{actionMessage.text}</span>
+                </div>
                 <button
                   onClick={() => setActionMessage(null)}
-                  className="text-xs font-semibold underline opacity-70 hover:opacity-100 cursor-pointer"
+                  className="text-xs font-semibold underline opacity-70 hover:opacity-100 cursor-pointer ml-4"
                 >
                   Dismiss
                 </button>
               </div>
             )}
 
-            {/* Section 1: Incoming Requests (Action Required) */}
+            {/* Section 1: Incoming Requests (Owner View) */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div>
@@ -388,10 +582,10 @@ export default function DashboardPage() {
                       className="bg-white rounded-xl border border-brand-secondary/20 p-4 flex flex-col justify-between space-y-3"
                     >
                       <div>
-                        {/* Top: Item Title & Status Badge */}
+                        {/* Top: Item Title & Badges */}
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded mr-2">
+                            <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded-tight mr-2">
                               {req.listing?.type}
                             </span>
                             <h3 className="font-bold text-ink-primary text-xs inline">
@@ -400,126 +594,255 @@ export default function DashboardPage() {
                           </div>
 
                           <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.2 rounded-full text-[11px] font-bold ${
-                                req.status === 'PENDING'
-                                  ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                                  : req.status === 'ACCEPTED'
-                                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                                  : 'bg-red-50 text-red-700 border border-red-200'
-                              }`}
-                            >
-                              {req.status}
-                            </span>
+                            <StatusBadge status={req.status} />
+                            <CountdownBadge req={req} />
 
-                            {/* WhatsApp Connect Pill Button for Accepted Transaction */}
-                            {req.status === 'ACCEPTED' && req.requester?.phone && (
+                            {/* WhatsApp Connect Button (rendered only when phone is returned by API) */}
+                            {req.requester?.phone && (
                               <a
                                 href={`https://wa.me/${req.requester.phone.replace(/\D/g, '')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs"
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-tight text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs"
                                 title={`Chat with ${req.requester.fullName || 'student'} on WhatsApp`}
                               >
                                 <MessageCircle className="w-3 h-3" />
-                                <span>Connect on WhatsApp</span>
+                                <span>WhatsApp</span>
                               </a>
                             )}
                           </div>
                         </div>
 
                         {/* Requester Info */}
-                        <div className="mt-3 p-2.5 rounded-lg bg-brand-bg/60 border border-brand-secondary/15 text-xs flex items-center justify-between">
+                        <div className="mt-3 p-2.5 rounded-control bg-brand-bg/60 border border-brand-secondary/15 text-xs flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold text-[10px]">
                               <User className="w-3 h-3" />
                             </div>
                             <div>
                               <p className="font-semibold text-ink-primary text-xs">{req.requester?.fullName || 'Student'}</p>
-                              <p className="font-mono text-[10px] text-ink-secondary">{req.requester?.email}</p>
+                              <p className="font-mono text-[10px] text-ink-secondary">
+                                {req.requester?.email}
+                                {req.requester?.phone ? ` | ${req.requester.phone}` : ''}
+                              </p>
                             </div>
                           </div>
                           <span className="text-[10px] text-ink-secondary font-mono">
                             {formatDate(req.createdAt)}
                           </span>
                         </div>
+
+                        {/* Lifecycle Info */}
+                        {(req.dueAt || req.handedOverAt || req.returnedAt) && (
+                          <div className="mt-2 text-[11px] text-ink-secondary space-y-0.5 px-0.5">
+                            {req.handedOverAt && !req.handoffAt && (
+                              <p>Handover marked on: {formatDateTime(req.handedOverAt)}</p>
+                            )}
+                            {req.dueAt && (
+                              <p>Due: <span className="font-medium text-ink-primary">{formatDateTime(req.dueAt)}</span></p>
+                            )}
+                            {req.returnedAt && (
+                              <p>Returned on: <span className="font-medium text-ink-primary">{formatDateTime(req.returnedAt)}</span></p>
+                            )}
+                            {req.disputed && (
+                              <p className="text-amber-800 font-semibold">Return disputed by owner.</p>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Action Buttons & Contact Status for Listing Owner */}
-                      {req.status === 'PENDING' ? (
-                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-brand-secondary/15">
-                          <button
-                            onClick={() => handleUpdateStatus(req.id, 'REJECTED')}
-                            disabled={actionLoadingId === req.id}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors cursor-pointer"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            <span>Reject</span>
-                          </button>
+                      <div className="pt-2 border-t border-brand-secondary/15">
+                        {req.status === 'PENDING' && (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleUpdateStatus(req.id, 'REJECTED')}
+                              disabled={actionLoadingId === req.id}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>Reject</span>
+                            </button>
 
-                          <button
-                            onClick={() => handleUpdateStatus(req.id, 'ACCEPTED')}
-                            disabled={actionLoadingId === req.id}
-                            className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer"
-                          >
-                            {actionLoadingId === req.id ? (
-                              <RefreshCw className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Check className="w-3 h-3" />
-                            )}
-                            <span>Accept Request</span>
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="pt-2 border-t border-brand-secondary/15 text-xs space-y-1.5">
-                          {req.status === 'ACCEPTED' ? (
-                            <>
-                              <div className="flex items-center justify-between">
-                                <span className="text-emerald-800 font-semibold flex items-center gap-1 text-xs">
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>Accepted {req.requester?.phone ? `• ${req.requester.phone}` : `• Connect at ${req.requester?.email}`}</span>
-                                </span>
-                                {req.requester?.phone ? (
-                                  <a
-                                    href={`https://wa.me/${req.requester.phone.replace(/\D/g, '')}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[11px] font-bold text-emerald-700 hover:underline"
-                                  >
-                                    Open WhatsApp &rarr;
-                                  </a>
-                                ) : (
-                                  <span className="text-[10px] text-ink-secondary/70 italic">
-                                    Ask them to add a phone number in their profile
-                                  </span>
-                                )}
-                              </div>
-                              {!user?.phone && (
-                                <div className="text-[10px] text-brand-secondary flex items-center justify-end">
+                            <button
+                              onClick={() => handleUpdateStatus(req.id, 'ACCEPTED')}
+                              disabled={actionLoadingId === req.id}
+                              className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {actionLoadingId === req.id ? (
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Check className="w-3 h-3" />
+                              )}
+                              <span>Accept Request</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {req.status === 'ACCEPTED' && req.listing?.type === 'RENT' && (
+                          <div className="space-y-2.5">
+                            {!req.handedOverAt ? (
+                              <div className="p-3 rounded-control bg-brand-bg border border-brand-secondary/20 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-semibold text-brand-primary">Verify Physical Handover</span>
+                                  <span className="text-[11px] text-ink-secondary">Ask borrower for their 6-digit code</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete="off"
+                                    maxLength={6}
+                                    placeholder="000000"
+                                    value={codeInputs[req.id] || ''}
+                                    onChange={(e) => handleCodeInputChange(req.id, e.target.value)}
+                                    disabled={actionLoadingId === req.id}
+                                    className="w-32 px-3 py-1.5 text-center font-mono text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                                  />
                                   <button
-                                    type="button"
-                                    onClick={() => setIsProfileModalOpen(true)}
-                                    className="underline font-semibold hover:text-brand-primary cursor-pointer"
+                                    onClick={() => handleVerifyCode(req.id, 'verify-handoff', codeInputs[req.id], 'Handoff verified successfully. Lease is now active.')}
+                                    disabled={actionLoadingId === req.id || (codeInputs[req.id] || '').length !== 6}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    Add your number to let others reach you
+                                    {actionLoadingId === req.id ? (
+                                      <RefreshCw className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      <Check className="w-3 h-3" />
+                                    )}
+                                    <span>Verify Handoff</span>
                                   </button>
                                 </div>
+                                <div className="pt-1 border-t border-brand-secondary/15 flex items-center justify-between">
+                                  <span className="text-[10px] text-ink-secondary">Can't use a code?</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (window.confirm("Mark item as handed over without a verification code? Note: A manual handover that the other person does not confirm will not count against anyone's account.")) {
+                                        handleAction(req.id, 'handoff', 'Handover recorded. Waiting for borrower to confirm receipt.');
+                                      }
+                                    }}
+                                    disabled={actionLoadingId === req.id}
+                                    className="text-[11px] font-medium text-brand-secondary hover:text-brand-primary underline cursor-pointer disabled:opacity-50"
+                                  >
+                                    Use manual handover
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-xs text-ink-secondary flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5 text-brand-secondary" />
+                                <span>Manual handover recorded. Waiting for borrower to confirm receipt.</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {req.status === 'ACCEPTED' && req.listing?.type !== 'RENT' && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-ink-secondary">
+                              Meet peer and complete exchange.
+                            </span>
+                            <button
+                              onClick={() => handleAction(req.id, 'complete', 'Transaction marked as completed.')}
+                              disabled={actionLoadingId === req.id}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {actionLoadingId === req.id ? (
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Check className="w-3 h-3" />
                               )}
-                            </>
-                          ) : (
-                            <div className="text-right">
-                              <span className="text-red-700 font-medium text-xs">Declined</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                              <span>Complete Exchange</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {(req.status === 'ACTIVE_LEASE' || req.status === 'OVERDUE') && req.listing?.type === 'RENT' && (
+                          <div className="space-y-2">
+                            {req.returnCode ? (
+                              <div className="p-3 rounded-control bg-brand-bg border border-brand-secondary/20 space-y-1 text-left">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-semibold text-brand-primary">Return Verification Code</span>
+                                  <CountdownBadge req={req} />
+                                </div>
+                                <div className="py-1">
+                                  <div className="font-mono text-2xl font-bold tracking-widest text-ink-primary select-all">
+                                    {req.returnCode}
+                                  </div>
+                                </div>
+                                <p className="text-[11px] text-ink-secondary">
+                                  Show this code to the borrower when they return the item.
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-ink-secondary">
+                                  {req.status === 'OVERDUE' ? 'Rental is overdue. Overdue notices sent to borrower.' : 'Lease active. Item is currently with borrower.'}
+                                </span>
+                                <CountdownBadge req={req} />
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {req.status === 'RETURN_PENDING' && (
+                          <div className="flex items-center justify-end gap-2">
+                            {!req.disputed && (
+                              <button
+                                onClick={() => handleAction(req.id, 'dispute', 'Return disputed. Auto-completion suspended.')}
+                                disabled={actionLoadingId === req.id}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 transition-colors cursor-pointer disabled:opacity-50"
+                              >
+                                <span>Dispute Return</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleAction(req.id, 'confirm-return', 'Return confirmed. Transaction completed.')}
+                              disabled={actionLoadingId === req.id}
+                              className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {actionLoadingId === req.id ? (
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Check className="w-3 h-3" />
+                              )}
+                              <span>Confirm Return</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {req.status === 'COMPLETED' && (
+                          <div className="text-xs text-emerald-800 font-semibold flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Transaction completed.</span>
+                          </div>
+                        )}
+
+                        {req.status === 'REJECTED' && (
+                          <div className="text-right text-xs text-ink-secondary">
+                            <span>Request rejected.</span>
+                          </div>
+                        )}
+
+                        {req.status === 'CANCELLED' && (
+                          <div className="text-right text-xs text-ink-secondary">
+                            <span>Cancelled by requester.</span>
+                          </div>
+                        )}
+
+                        {req.status === 'EXPIRED' && (
+                          <div className="text-right text-xs text-ink-secondary">
+                            <span>Request expired.</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Section 2: My Outgoing Requests */}
+            {/* Section 2: My Outgoing Requests (Requester View) */}
             <div className="pt-5 border-t border-brand-secondary/20">
               <h2 className="text-base font-bold text-ink-primary mb-1">
                 My Outgoing Requests <span className="text-ink-secondary/70 font-normal">({outgoingRequests.length})</span>
@@ -540,9 +863,10 @@ export default function DashboardPage() {
                       className="bg-white rounded-xl border border-brand-secondary/20 p-4 flex flex-col justify-between space-y-3"
                     >
                       <div>
+                        {/* Top: Item Title & Badges */}
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded mr-2">
+                            <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded-tight mr-2">
                               {req.listing?.type}
                             </span>
                             <h3 className="font-bold text-ink-primary text-xs inline">
@@ -551,85 +875,230 @@ export default function DashboardPage() {
                           </div>
 
                           <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.2 rounded-full text-[11px] font-bold ${
-                                req.status === 'PENDING'
-                                  ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                                  : req.status === 'ACCEPTED'
-                                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                                  : 'bg-red-50 text-red-700 border border-red-200'
-                              }`}
-                            >
-                              {req.status === 'PENDING' ? 'Waiting on Owner' : req.status}
-                            </span>
+                            <StatusBadge status={req.status} />
+                            <CountdownBadge req={req} />
 
-                            {/* WhatsApp Connect Pill Button for Accepted Transaction */}
-                            {req.status === 'ACCEPTED' && req.listing?.owner?.phone && (
+                            {/* WhatsApp Connect Button (rendered only when phone is returned by API) */}
+                            {req.listing?.owner?.phone && (
                               <a
                                 href={`https://wa.me/${req.listing.owner.phone.replace(/\D/g, '')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs"
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-tight text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs"
                                 title={`Chat with ${req.listing.owner.fullName || 'owner'} on WhatsApp`}
                               >
                                 <MessageCircle className="w-3 h-3" />
-                                <span>Connect on WhatsApp</span>
+                                <span>WhatsApp</span>
                               </a>
                             )}
                           </div>
                         </div>
 
                         {/* Owner contact details */}
-                        <div className="mt-3 p-2.5 rounded-lg bg-brand-bg/60 border border-brand-secondary/15 text-xs flex items-center justify-between">
+                        <div className="mt-3 p-2.5 rounded-control bg-brand-bg/60 border border-brand-secondary/15 text-xs flex items-center justify-between">
                           <div>
                             <p className="text-[10px] text-ink-secondary">Listing Owner</p>
                             <p className="font-mono text-xs font-semibold text-ink-primary">
                               {req.listing?.owner?.fullName ? `${req.listing.owner.fullName} (${req.listing.owner.email})` : req.listing?.owner?.email}
                             </p>
+                            {req.listing?.owner?.phone && (
+                              <p className="font-mono text-[10px] text-emerald-800 font-semibold mt-0.5">
+                                Phone: {req.listing.owner.phone}
+                              </p>
+                            )}
                           </div>
                           <div className="text-right">
                             <p className="text-[10px] text-ink-secondary">Requested</p>
                             <p className="font-mono text-xs text-ink-secondary">{formatDate(req.createdAt)}</p>
                           </div>
                         </div>
+
+                        {/* Lifecycle Info */}
+                        {(req.dueAt || req.handedOverAt || req.returnedAt) && (
+                          <div className="mt-2 text-[11px] text-ink-secondary space-y-0.5 px-0.5">
+                            {req.handedOverAt && !req.handoffAt && (
+                              <p className="text-emerald-800 font-semibold">Owner recorded item handover on {formatDateTime(req.handedOverAt)}</p>
+                            )}
+                            {req.dueAt && (
+                              <p>Due: <span className="font-medium text-ink-primary">{formatDateTime(req.dueAt)}</span></p>
+                            )}
+                            {req.returnedAt && (
+                              <p>Return declared on: <span className="font-medium text-ink-primary">{formatDateTime(req.returnedAt)}</span></p>
+                            )}
+                            {req.disputed && (
+                              <p className="text-amber-800 font-semibold">Owner disputed the return. Please reach out to resolve.</p>
+                            )}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Outgoing Accepted Info / Prompt */}
-                      {req.status === 'ACCEPTED' && (
-                        <div className="pt-2 border-t border-brand-secondary/15 text-xs space-y-1.5">
+                      {/* Outgoing Action Buttons */}
+                      <div className="pt-2 border-t border-brand-secondary/15">
+                        {req.status === 'PENDING' && (
                           <div className="flex items-center justify-between">
-                            <span className="text-emerald-800 font-semibold flex items-center gap-1 text-xs">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>Owner {req.listing?.owner?.phone ? `• ${req.listing.owner.phone}` : `• ${req.listing?.owner?.email}`}</span>
-                            </span>
-                            {req.listing?.owner?.phone ? (
-                              <a
-                                href={`https://wa.me/${req.listing.owner.phone.replace(/\D/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[11px] font-bold text-emerald-700 hover:underline"
+                            <span className="text-[11px] text-ink-secondary">Waiting for owner response.</span>
+                            <button
+                              onClick={() => handleAction(req.id, 'cancel', 'Request cancelled.')}
+                              disabled={actionLoadingId === req.id}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>Cancel Request</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {req.status === 'ACCEPTED' && req.listing?.type === 'RENT' && (
+                          <div className="space-y-2.5">
+                            {req.handoffCode && (
+                              <div className="p-3 rounded-control bg-brand-bg border border-brand-secondary/20 space-y-1 text-left">
+                                <span className="text-[11px] font-semibold text-brand-primary">Handoff Verification Code</span>
+                                <div className="py-1">
+                                  <div className="font-mono text-2xl font-bold tracking-widest text-ink-primary select-all">
+                                    {req.handoffCode}
+                                  </div>
+                                </div>
+                                <p className="text-[11px] text-ink-secondary">
+                                  Show this code to the owner when you receive the item.
+                                </p>
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-between gap-2 pt-1">
+                              <button
+                                onClick={() => handleAction(req.id, 'cancel', 'Request cancelled.')}
+                                disabled={actionLoadingId === req.id}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50"
                               >
-                                Open WhatsApp &rarr;
-                              </a>
+                                <X className="w-3.5 h-3.5" />
+                                <span>Cancel</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm("Confirm physical receipt without a verification code? Note: A manual handover that the other person does not confirm will not count against anyone's account.")) {
+                                    handleAction(req.id, 'confirm-receipt', 'Receipt confirmed. Lease clock is now active.');
+                                  }
+                                }}
+                                disabled={actionLoadingId === req.id}
+                                className="text-[11px] font-medium text-brand-secondary hover:text-brand-primary underline cursor-pointer disabled:opacity-50"
+                              >
+                                Can't use a code? Use manual handover
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {req.status === 'ACCEPTED' && req.listing?.type !== 'RENT' && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-ink-secondary">Meet owner in person to complete exchange.</span>
+                            <button
+                              onClick={() => handleAction(req.id, 'cancel', 'Request cancelled.')}
+                              disabled={actionLoadingId === req.id}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>Cancel</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {(req.status === 'ACTIVE_LEASE' || req.status === 'OVERDUE') && (
+                          <div className="space-y-2.5">
+                            <div className="p-3 rounded-control bg-brand-bg border border-brand-secondary/20 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold text-brand-primary">Verify Return</span>
+                                <CountdownBadge req={req} />
+                              </div>
+                              <p className="text-[11px] text-ink-secondary">
+                                Ask the owner for their 6-digit return code at physical return.
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  autoComplete="off"
+                                  maxLength={6}
+                                  placeholder="000000"
+                                  value={codeInputs[req.id] || ''}
+                                  onChange={(e) => handleCodeInputChange(req.id, e.target.value)}
+                                  disabled={actionLoadingId === req.id}
+                                  className="w-32 px-3 py-1.5 text-center font-mono text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                                />
+                                <button
+                                  onClick={() => handleVerifyCode(req.id, 'verify-return', codeInputs[req.id], 'Return verified successfully. Transaction completed.')}
+                                  disabled={actionLoadingId === req.id || (codeInputs[req.id] || '').length !== 6}
+                                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {actionLoadingId === req.id ? (
+                                    <RefreshCw className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <Check className="w-3 h-3" />
+                                  )}
+                                  <span>Verify Return</span>
+                                </button>
+                              </div>
+                              <div className="pt-1 border-t border-brand-secondary/15 flex items-center justify-between">
+                                <span className="text-[10px] text-ink-secondary">Can't use a code?</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm("Declare item returned without a verification code? Note: A manual return that the other person does not confirm will not count against anyone's account.")) {
+                                      handleAction(req.id, 'return', 'Item marked as returned. Waiting for owner confirmation.');
+                                    }
+                                  }}
+                                  disabled={actionLoadingId === req.id}
+                                  className="text-[11px] font-medium text-brand-secondary hover:text-brand-primary underline cursor-pointer disabled:opacity-50"
+                                >
+                                  Use manual return
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {req.status === 'RETURN_PENDING' && (
+                          <div className="text-xs text-ink-secondary">
+                            {req.disputed ? (
+                              <span className="text-amber-800 font-semibold flex items-center gap-1 text-xs">
+                                <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                                <span>Owner reported an issue with the return. Contact them to resolve.</span>
+                              </span>
                             ) : (
-                              <span className="text-[10px] text-ink-secondary/70 italic">
-                                Ask them to add a phone number in their profile
+                              <span className="text-emerald-800 font-semibold flex items-center gap-1 text-xs">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Return declared. Awaiting owner confirmation (auto-completes in 48h).</span>
                               </span>
                             )}
                           </div>
-                          {!user?.phone && (
-                            <div className="text-[10px] text-brand-secondary flex items-center justify-end">
-                              <button
-                                type="button"
-                                onClick={() => setIsProfileModalOpen(true)}
-                                className="underline font-semibold hover:text-brand-primary cursor-pointer"
-                              >
-                                Add your number to let others reach you
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                        )}
+
+                        {req.status === 'COMPLETED' && (
+                          <div className="text-xs text-emerald-800 font-semibold flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Transaction completed. Thank you!</span>
+                          </div>
+                        )}
+
+                        {req.status === 'REJECTED' && (
+                          <div className="text-right text-xs text-ink-secondary">
+                            <span>Request declined by owner.</span>
+                          </div>
+                        )}
+
+                        {req.status === 'CANCELLED' && (
+                          <div className="text-right text-xs text-ink-secondary">
+                            <span>You cancelled this request.</span>
+                          </div>
+                        )}
+
+                        {req.status === 'EXPIRED' && (
+                          <div className="text-right text-xs text-ink-secondary">
+                            <span>Request expired.</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
