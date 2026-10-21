@@ -11,6 +11,7 @@ import {
   Layers, ArrowLeftRight, Check, X, Clock, User, AlertCircle, RefreshCw, MessageCircle 
 } from 'lucide-react';
 import { getFriendlyErrorMessage } from '../utils/errors';
+import { formatDateTime, formatDuration } from '../utils/time';
 
 const CATEGORY_FILTERS = [
   { id: 'ALL', label: 'All Items' },
@@ -80,46 +81,48 @@ function StatusBadge({ status }) {
   );
 }
 
-function getHoursRemaining(req) {
-  if (!req) return null;
-  if (req.hoursLeft != null) return req.hoursLeft;
-  if (!req.dueAt) return null;
-  const diffMs = new Date(req.dueAt).getTime() - Date.now();
-  return Math.round(diffMs / (1000 * 60 * 60));
+function useMinuteTicker() {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+  return now;
 }
 
 function CountdownBadge({ req }) {
-  if (!req) return null;
+  const now = useMinuteTicker();
+  if (!req || !req.dueAt) return null;
   const { status } = req;
+  const dueTime = new Date(req.dueAt).getTime();
+  if (isNaN(dueTime)) return null;
+
+  const diffMs = dueTime - now;
 
   if (status === 'ACTIVE_LEASE') {
-    const hrs = getHoursRemaining(req);
-    if (hrs == null) return null;
-
-    let text = '';
-    if (hrs > 1) {
-      text = `${hrs} hrs left to return`;
-    } else if (hrs === 1) {
-      text = '1 hr left to return';
-    } else if (hrs === 0) {
-      text = '< 1 hr left to return';
+    if (diffMs > 0) {
+      const text = `Due in ${formatDuration(diffMs)}`;
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-tight text-[10px] font-semibold bg-sky-50 text-sky-800 border border-sky-200">
+          <Clock className="w-3 h-3 text-sky-600" />
+          <span>{text}</span>
+        </span>
+      );
     } else {
-      text = `overdue by ${Math.abs(hrs)} hrs`;
+      const overdueMs = Math.abs(diffMs);
+      const text = `Overdue by ${formatDuration(overdueMs)}`;
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-tight text-[10px] font-bold bg-red-50 text-red-800 border border-red-200">
+          <AlertCircle className="w-3 h-3 text-red-600" />
+          <span>{text}</span>
+        </span>
+      );
     }
-
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-tight text-[10px] font-semibold bg-sky-50 text-sky-800 border border-sky-200">
-        <Clock className="w-3 h-3 text-sky-600" />
-        <span>{text}</span>
-      </span>
-    );
   }
 
   if (status === 'OVERDUE') {
-    const hrs = getHoursRemaining(req);
-    const overdueHrs = hrs != null ? Math.max(1, Math.abs(hrs)) : 1;
-    const text = overdueHrs === 1 ? 'overdue by 1 hr' : `overdue by ${overdueHrs} hrs`;
-
+    const overdueMs = Math.max(0, now - dueTime);
+    const text = `Overdue by ${formatDuration(overdueMs)}`;
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-tight text-[10px] font-bold bg-red-50 text-red-800 border border-red-200">
         <AlertCircle className="w-3 h-3 text-red-600" />
@@ -300,33 +303,7 @@ export default function DashboardPage() {
     return item.title?.toLowerCase().includes(q) || item.description?.toLowerCase().includes(q);
   });
 
-  const formatDate = (isoString) => {
-    if (!isoString) return 'Recently';
-    try {
-      return new Date(isoString).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return 'Recently';
-    }
-  };
 
-  const formatDateTime = (isoString) => {
-    if (!isoString) return '';
-    try {
-      return new Date(isoString).toLocaleString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return '';
-    }
-  };
 
   return (
     <div className="min-h-screen bg-brand-bg flex flex-col">
@@ -628,7 +605,7 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           <span className="text-[10px] text-ink-secondary font-mono">
-                            {formatDate(req.createdAt)}
+                            {formatDateTime(req.createdAt)}
                           </span>
                         </div>
 
@@ -909,7 +886,7 @@ export default function DashboardPage() {
                           </div>
                           <div className="text-right">
                             <p className="text-[10px] text-ink-secondary">Requested</p>
-                            <p className="font-mono text-xs text-ink-secondary">{formatDate(req.createdAt)}</p>
+                            <p className="font-mono text-xs text-ink-secondary">{formatDateTime(req.createdAt)}</p>
                           </div>
                         </div>
 

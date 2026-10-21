@@ -6,6 +6,7 @@ import {
   Edit3, Trash2, ArrowLeft, Save, AlertTriangle, Clock 
 } from 'lucide-react';
 import { getFriendlyErrorMessage } from '../utils/errors';
+import { formatDateTime, formatDuration } from '../utils/time';
 
 const CATEGORIES = [
   { value: 'CALCULATOR', label: 'Scientific Calculator (fx-991CW / ES)' },
@@ -197,20 +198,7 @@ export default function ListingDetailModal({
     }
   };
 
-  const formatDate = (isoString) => {
-    if (!isoString) return 'Recently';
-    try {
-      return new Date(isoString).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return 'Recently';
-    }
-  };
+
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-primary/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6">
@@ -343,7 +331,7 @@ export default function ListingDetailModal({
               </div>
               <div className="text-right text-[11px] text-ink-secondary/70">
                 <p>Listed</p>
-                <p className="font-mono text-ink-secondary">{formatDate(listing.createdAt)}</p>
+                <p className="font-mono text-ink-secondary">{formatDateTime(listing.createdAt)}</p>
               </div>
             </div>
 
@@ -379,10 +367,10 @@ export default function ListingDetailModal({
                         <span>Rental Terms and Due Date Policy</span>
                       </div>
                       <p className="text-[11px] text-ink-secondary leading-relaxed">
-                        The lease clock starts when you confirm physical receipt of the item (or automatically after 12 hours of handover). The item must be returned within the {listing.rentalPeriod ? listing.rentalPeriod.toLowerCase() : 'agreed'} period.
+                        The lease clock starts when you confirm physical receipt of the item (or automatically after {formatDuration(12 * 3600 * 1000)} of handover). The item must be returned within the {listing.rentalPeriod ? listing.rentalPeriod.toLowerCase() : 'agreed'} period.
                       </p>
                       <div className="pt-1.5 border-t border-brand-secondary/15 text-[11px] text-ink-secondary leading-relaxed">
-                        <span className="font-semibold text-red-700">Important:</span> Items overdue by more than 72 hours will freeze your account, which blocks new requests until the item is returned.
+                        <span className="font-semibold text-red-700">Important:</span> Items overdue by more than {formatDuration(72 * 3600 * 1000)} will freeze your account, which blocks new requests until the item is returned.
                       </div>
                     </div>
                   )}

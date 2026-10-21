@@ -1,5 +1,6 @@
 import React from 'react';
 import { RefreshCw, Clock, User as UserIcon, ArrowUpRight } from 'lucide-react';
+import { formatDateTime } from '../utils/time';
 
 export default function ListingCard({ listing, onClick }) {
   const { title, description, type, category, price, rentalRate, rentalPeriod, depositAmount, swapPreferences, imageUrl, owner, createdAt } = listing;
@@ -21,16 +22,6 @@ export default function ListingCard({ listing, onClick }) {
       dot: 'bg-brand-accent',
     },
   }[type] || { label: type, bg: 'bg-brand-primary/5 text-ink-primary border-brand-secondary/20', dot: 'bg-brand-secondary' };
-
-  const formatDate = (isoString) => {
-    if (!isoString) return 'Just now';
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-    } catch {
-      return 'Recently';
-    }
-  };
 
   return (
     <div
@@ -125,7 +116,7 @@ export default function ListingCard({ listing, onClick }) {
         </div>
         <div className="flex items-center gap-1 shrink-0 font-mono text-ink-secondary/70">
           <Clock className="w-3 h-3" />
-          <span>{formatDate(createdAt)}</span>
+          <span>{formatDateTime(createdAt)}</span>
         </div>
       </div>
     </div>

@@ -1,12 +1,14 @@
+import { formatDuration } from './time';
+
 /**
  * Central Error Code Mapping & Sanitizer for UniX Frontend
  * Eliminates raw machine error codes and raw Spring exceptions from user-visible UI.
  */
 
 export const ERROR_CODE_MAP = {
-  ACCOUNT_FROZEN: 'Items overdue by more than 72 hours will freeze your account, which blocks new requests until the item is returned.',
+  ACCOUNT_FROZEN: 'Items overdue by more than 3 days will freeze your account, which blocks new requests until the item is returned.',
   INVALID_CODE: 'Invalid verification code. Please check the 6-digit code and try again.',
-  CODE_LOCKED: 'Code verification is locked due to too many failed attempts.',
+  CODE_LOCKED: 'Too many incorrect attempts. Try again in 10 minutes.',
   IN_FLIGHT_TRANSACTION: 'Cannot modify or delete this item because an active transaction is currently in progress.',
   ILLEGAL_TRANSITION: 'This transaction action cannot be performed in its current status.',
   PHONE_REQUIRED: 'A phone number is required on your profile before requesting or accepting transactions.',
@@ -46,22 +48,27 @@ export function getFriendlyErrorMessage(err, fallbackMessage = 'An unexpected er
 
   const errorCode = err.errorCode || err.response?.data?.errorCode;
 
-  // 1. Check for CODE_LOCKED to show formatted retry time
+  // 1. Check for CODE_LOCKED to show formatted retry duration
   if (errorCode === 'CODE_LOCKED') {
-    const rawMsg = err.message || err.response?.data?.message || '';
-    const match = rawMsg.match(/Try again after\s+([^\s.]+)/i);
-    if (match && match[1]) {
-      try {
-        const lockTime = new Date(match[1]);
-        if (!isNaN(lockTime.getTime())) {
-          const timeStr = lockTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          return `Code verification is locked due to failed attempts. Try again after ${timeStr}.`;
-        }
-      } catch {
-        // Ignore date parse failure and use fallback code text
-      }
+    const remainingSeconds =
+      err.response?.data?.remainingSeconds ??
+      (err.response?.headers?.['retry-after'] ? parseInt(err.response.headers['retry-after'], 10) : null);
+
+    if (remainingSeconds != null && !isNaN(remainingSeconds) && remainingSeconds > 0) {
+      const waitText = formatDuration(remainingSeconds * 1000);
+      return `Too many incorrect attempts. Try again in ${waitText}.`;
     }
     return ERROR_CODE_MAP.CODE_LOCKED;
+  }
+
+  // 2. Check for INVALID_CODE with remaining attempts
+  if (errorCode === 'INVALID_CODE') {
+    const attemptsRemaining = err.response?.data?.attemptsRemaining;
+    if (attemptsRemaining != null && !isNaN(attemptsRemaining)) {
+      const word = attemptsRemaining === 1 ? 'attempt' : 'attempts';
+      return `Invalid verification code. ${attemptsRemaining} ${word} remaining.`;
+    }
+    return ERROR_CODE_MAP.INVALID_CODE;
   }
 
   // 2. Check known error code map
