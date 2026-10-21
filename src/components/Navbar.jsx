@@ -35,16 +35,13 @@ export default function Navbar() {
           {/* Brand Logo */}
           <div className="flex items-center gap-3">
             <UniXLogoMark className="w-9 h-9 flex-shrink-0" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold tracking-tight text-ink-primary">
-                  Uni<span className="text-brand-secondary">X</span>
-                </span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider bg-brand-primary/5 text-ink-primary border border-brand-secondary/25">
-                  KITSW
-                </span>
-              </div>
-              <p className="text-[11px] text-ink-secondary font-medium leading-none">Campus Marketplace</p>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold tracking-tight text-ink-primary">
+                Uni<span className="text-brand-secondary">X</span>
+              </span>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider bg-brand-primary/5 text-ink-primary border border-brand-secondary/25">
+                KITSW
+              </span>
             </div>
           </div>
 

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-  School, User, Lock, KeyRound, ArrowRight, CheckCircle, 
-  AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2, Phone, MessageSquare, SkipForward 
+import {
+  School, User, Lock, KeyRound, ArrowRight, CheckCircle,
+  AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2, Phone, MessageSquare, SkipForward
 } from 'lucide-react';
 import { UniXLogoMark } from '../components/Navbar';
 
@@ -222,14 +222,11 @@ export default function LoginPage() {
         <h2 className="text-xl font-bold tracking-tight text-ink-primary">
           Welcome to <span className="text-brand-secondary">UniX</span>
         </h2>
-        <p className="mt-1 text-xs text-ink-secondary">
-          KITSW Campus Resource Sharing & Marketplace
-        </p>
       </div>
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="bg-white py-7 px-6 sm:px-8 border border-brand-secondary/20 rounded-2xl">
-          
+
           {/* Mode Switcher Tabs */}
           <div className="flex rounded-lg bg-brand-primary/5 p-1 mb-6 border border-brand-secondary/15">
             <button
@@ -238,11 +235,10 @@ export default function LoginPage() {
                 setAuthMode('SIGN_IN');
                 resetErrors();
               }}
-              className={`w-1/2 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                authMode === 'SIGN_IN'
-                  ? 'bg-brand-primary text-white'
-                  : 'text-ink-secondary hover:text-ink-primary'
-              }`}
+              className={`w-1/2 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${authMode === 'SIGN_IN'
+                ? 'bg-brand-primary text-white'
+                : 'text-ink-secondary hover:text-ink-primary'
+                }`}
             >
               Sign In
             </button>
@@ -253,11 +249,10 @@ export default function LoginPage() {
                 setSignUpStep(1);
                 resetErrors();
               }}
-              className={`w-1/2 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                authMode === 'SIGN_UP'
-                  ? 'bg-brand-primary text-white'
-                  : 'text-ink-secondary hover:text-ink-primary'
-              }`}
+              className={`w-1/2 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${authMode === 'SIGN_UP'
+                ? 'bg-brand-primary text-white'
+                : 'text-ink-secondary hover:text-ink-primary'
+                }`}
             >
               Create Account
             </button>
@@ -391,21 +386,17 @@ export default function LoginPage() {
             <div>
               {/* Step indicator */}
               <div className="flex items-center justify-center gap-1.5 mb-5">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  signUpStep >= 1 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
-                }`}>1</div>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${signUpStep >= 1 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
+                  }`}>1</div>
                 <div className={`h-0.5 w-4 ${signUpStep >= 2 ? 'bg-brand-primary' : 'bg-brand-secondary/20'}`} />
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  signUpStep >= 2 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
-                }`}>2</div>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${signUpStep >= 2 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
+                  }`}>2</div>
                 <div className={`h-0.5 w-4 ${signUpStep >= 3 ? 'bg-brand-primary' : 'bg-brand-secondary/20'}`} />
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  signUpStep >= 3 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
-                }`}>3</div>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${signUpStep >= 3 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
+                  }`}>3</div>
                 <div className={`h-0.5 w-4 ${signUpStep >= 4 ? 'bg-brand-primary' : 'bg-brand-secondary/20'}`} />
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  signUpStep >= 4 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
-                }`}>4</div>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${signUpStep >= 4 ? 'bg-brand-primary text-white' : 'bg-brand-primary/10 text-ink-secondary'
+                  }`}>4</div>
               </div>
 
               {/* STEP 1: Details */}
@@ -706,9 +697,7 @@ export default function LoginPage() {
 
         </div>
 
-        <p className="text-center text-[10px] text-ink-secondary mt-5">
-          Protected by Kakatiya Institute of Technology & Science campus auth.
-        </p>
+
       </div>
     </div>
   );

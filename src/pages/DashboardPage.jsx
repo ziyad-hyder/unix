@@ -314,17 +314,7 @@ export default function DashboardPage() {
         {/* Top Hero / Header Section */}
         <div className="py-4 border-b border-brand-secondary/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-brand-secondary">
-                KITSW Campus Marketplace
-              </span>
-              {user?.verified && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                  Verified
-                </span>
-              )}
-            </div>
+
 
             <h1 className="text-2xl font-bold tracking-tight text-ink-primary">
               Uni<span className="text-brand-secondary">X</span> Resource Exchange
