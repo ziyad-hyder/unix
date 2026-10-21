@@ -1,124 +1,127 @@
-# UniX Frontend
+# UniX
 
-UniX is a campus resource-sharing platform designed for university students to exchange essential academic equipment, including scientific calculators, engineering drafting kits, lab tools, and textbooks. The platform facilitates peer-to-peer sharing through direct sales, equipment rentals, and item swaps within a verified campus community.
+**A verified campus marketplace where students rent, buy, and swap academic gear, with a rental lifecycle that enforces itself.**
 
-- Production Web Application: [unix-9o9.pages.dev](https://unix-9o9.pages.dev)
-- Source Repository: [github.com/ziyad-hyder/unix](https://github.com/ziyad-hyder/unix)
+[**Live app**](https://unix-9o9.pages.dev) · Built for Kakatiya Institute of Technology and Science, Warangal (KITSW)
 
----
+<!-- Add a hero screenshot or 20-second GIF here. Example:
+![UniX demo](docs/demo.gif)
+-->
 
-## User Features
-
-- **Resource Listings**: Browse, search, and filter available campus items across categories such as Calculators, Drafting Tools, Electronics, and Academic Resources.
-- **Flexible Exchange Types**:
-  - **Rent**: Borrow items for daily, weekly, monthly, or semester durations.
-  - **Buy / Sell**: Purchase equipment directly from peers at student-friendly prices.
-  - **Swap**: Trade specialized tools and course materials directly.
-- **Verified Exchanges**:
-  - Time-bound physical handoff and return workflows with verification codes to ensure transparent exchange confirmation between parties.
-  - Clear item lifecycle tracking from request submission to completion.
-- **Due Date Reminders**:
-  - Live rental countdown badges and timely return notices to help students return borrowed equipment on schedule.
-- **Privacy-Preserving Contact Sharing**:
-  - Direct communication channels are made available exclusively between active transaction participants once a request is accepted.
+Engineering students buy calculators, drafting kits, and lab components that sit unused after a semester or two. UniX keeps them circulating inside a trusted campus community: access is limited to verified `@kitsw.ac.in` accounts, and rentals are tracked from request to return so nobody has to rely on trust alone.
 
 ---
 
-## Evolution of Exchange Workflows
+## What makes it more than a listings board
 
-UniX has evolved its exchange experience across major versions to better protect student belongings and simplify campus borrowing:
+### Rentals with a real state machine
+Rent transactions move through nine states (`PENDING`, `ACCEPTED`, `ACTIVE_LEASE`, `OVERDUE`, `RETURN_PENDING`, `COMPLETED`, `REJECTED`, `CANCELLED`, `EXPIRED`). Illegal transitions are rejected server-side, and a background scheduler handles overdue marking, reminders, and expiry without anyone clicking anything.
 
-- **Initial Release (Simple Request and Accept)**:
-  - Users submitted exchange requests, which owners accepted or declined. Once accepted, items were marked complete without active lifecycle tracking.
-  - While simple, this provided no visibility for rentals into active loan periods, return deadlines, or overdue status.
-
-- **Intermediate Update (Rental Lifecycles and Due Dates)**:
-  - Introduced dedicated rental stages (Active Lease, Return Pending, Overdue), giving students a real-time countdown badge on their dashboard indicating when an item was due.
-  - Added automated reminders prior to return deadlines to help borrowers return items on schedule.
-
-- **Current Version (Two-Party Verified Handover and Return)**:
-  - Replaced unilateral "marked handed over" and "marked returned" buttons with mutual 6-digit verification codes.
-  - When borrowing an item, the student receives a handoff code to show the owner at physical pickup.
-  - When returning an item, the owner receives a return code to show the student at physical dropoff.
-  - Entering the matching code instantly confirms the exchange between both parties, ensuring both students agree on the exchange.
-  - A fallback option ("Can't use a code?") remains accessible for situations where a phone battery is depleted, ensuring students are never stuck.
-
----
-
-## Tech Stack
-
-- **Framework**: React 18 (Single Page Application)
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS with custom Inception palette tokens
-- **Icons**: Lucide React
-- **HTTP Client**: Axios with credentialed session management
-- **Deployment**: Cloudflare Pages
-
----
-
-## Getting Started Locally
-
-### Prerequisites
-
-- Node.js (version 18 or higher)
-- npm (version 9 or higher)
-
-### Installation
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install project dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Create a local environment configuration file:
-   Create a file named `.env.local` in the `frontend` root:
-   ```env
-   VITE_API_URL=http://localhost:8080
-   ```
-
-4. Start the local development server:
-   ```bash
-   npm run dev
-   ```
-
-5. Open your browser and navigate to `http://localhost:5173`.
-
-### Production Build
-
-To validate or build the static production bundle:
-```bash
-npm run build
 ```
-The compiled assets will be output to the `dist/` directory.
+PENDING -> ACCEPTED -(handoff code)-> ACTIVE_LEASE -(return code)-> COMPLETED
+                                          |
+                                          v
+                                       OVERDUE -(return code)-> COMPLETED
+```
+
+### Handover and return proven by codes, not claims
+"Owner marked it handed over" and "borrower marked it returned" are the classic sources of campus disputes. UniX replaces both with mutual 6-digit codes:
+
+- The borrower shows a **handoff code** to the owner at pickup.
+- The owner shows a **return code** to the borrower at drop-off.
+- Codes are derived server-side with HMAC-SHA256, never stored, shown only to the correct party, compared in constant time, and rate-limited with a temporary lockout.
+- A "Can't use a code?" fallback exists for dead phone batteries, and the system records which method was used.
+
+### Fairness built into enforcement
+Late returns lead to an account freeze, but only when the lease was actually confirmed by both sides. If an owner's unilateral action started the clock automatically, the borrower is never penalized. Freezes block new requests only; login, returns, and owner actions keep working.
+
+### Privacy-gated contact reveal
+A student's WhatsApp number is never on a public listing. It is revealed to both parties only while a transaction is in a contact-active state, and hidden again the moment it reaches a terminal state.
 
 ---
 
-## Environment Variables
+## Engineering highlights
 
-The frontend application requires only the following client-side environment variable:
+| Problem | Approach |
+| :--- | :--- |
+| **iOS Safari silently drops cross-site cookies** (frontend and API live on different domains) | Dual-scheme auth: HttpOnly cookies for normal browsers plus an `Authorization: Bearer` header from an Axios interceptor, so sessions survive WebKit's tracking prevention. |
+| **Running a Spring Boot API on a 1 GB free-tier VM** | Capped heap, metaspace, code cache, and thread stacks, switched to the serial GC, and added a swapfile as a last-resort buffer. Lowering metaspace too far caused startup crashes, which became a documented lesson. |
+| **No crash alerts on an unmanaged VM** | Built a small Python watchdog (hard-capped at 30 MB) that watches RAM, CPU, swap, and OOM kills and sends Telegram alerts with recent logs attached. |
+| **Two students accepting the same item** | Optimistic locking on the listing, so only one request can win. |
+| **Image uploads without bloating the database** | Client-side canvas compression, then upload to Cloudflare R2 through the S3-compatible API. |
+| **Safe schema changes on a live database** | Flyway versioned migrations, applied automatically at startup. |
 
-| Variable | Description | Example / Default |
-| :--- | :--- | :--- |
-| `VITE_API_URL` | Base URL of the UniX REST API backend service | `http://localhost:8080` |
+---
 
-The application communicates with the backend REST API for all data persistence and authentication.
+## Architecture
+
+```
+Student browser
+      |
+      v
+Cloudflare Pages  (React + Vite, global edge)
+      |  HTTPS, CORS-restricted
+      v
+Spring Boot REST API  (Java 21, Spring Security 6, Spring Data JPA)
+      |-- Oracle Autonomous Database  (mTLS, Flyway migrations)
+      |-- Cloudflare R2               (listing images)
+      '-- Gmail SMTP                  (OTP and due-date reminders)
+```
+
+The backend lives in a separate private repository. This repo contains the full frontend, and I'm happy to walk through the backend design in an interview or call.
 
 ---
 
-## Design System
+## Tech stack
 
-The UniX interface uses the custom Inception color scheme and clean geometric design tokens:
-- Primary Dark: `#173541` (Headers, navigation, primary actions)
-- Secondary Slate: `#557C86` (Supporting text, icons, borders)
-- Warm Canvas: `#FAFAF8` (Clean, distraction-free reading background)
-- Typography: Inter typeface family with monospace numeric displays for verification codes.
+| Layer | Technology |
+| :--- | :--- |
+| Frontend | React 18, Vite, React Router 6, Axios |
+| Styling | Tailwind CSS with custom design tokens, Inter, Lucide icons |
+| Hosting | Cloudflare Pages (frontend), Oracle Cloud always-free VM (API) |
+| Backend | Spring Boot 3, Java 21, Spring Security, JPA/Hibernate |
+| Data | Oracle Autonomous Database 19c, Flyway |
+| Storage and mail | Cloudflare R2, Gmail SMTP |
+| Ops | systemd, Nginx, Let's Encrypt, custom Telegram watchdog |
 
 ---
+
+## Frontend notes
+
+- **Live rental countdowns**: badges show time left on each lease and flip to overdue styling automatically.
+- **Role-aware views**: the same transaction renders different actions and codes depending on whether you are the owner or the borrower.
+- **Mobile first**: tested on iOS Safari and Android Chrome, where the cookie problem above originally showed up.
+- **Design system**: a restrained palette (`#173541` primary, `#557C86` slate, `#FAFAF8` canvas), Inter for text, and monospace numerals for verification codes.
+
+---
+
+## Run it locally
+
+Requires Node.js 18+ and npm 9+.
+
+```bash
+cd frontend
+npm install
+echo "VITE_API_URL=http://localhost:8080" > .env.local
+npm run dev
+```
+
+Open `http://localhost:5173`. The only client-side variable is `VITE_API_URL`, the base URL of the API. Production build: `npm run build` (output in `dist/`).
+
+---
+
+## Lessons learned
+
+1. **Static hosts need explicit API URLs.** An Axios instance without a `baseURL` calls the Pages domain and returns confusing `405` errors.
+2. **`SameSite=None; Secure` is necessary but not sufficient.** Mobile WebKit can still block third-party cookies, so don't rely on cookies alone for cross-site sessions.
+3. **`-Xmx` is not your memory limit.** Metaspace, thread stacks, and the JIT cache all sit outside the heap and can push a small VM into OOM.
+4. **Unilateral actions create disputes.** Two-party proof, with a graceful fallback, turned out to be a better design than more buttons.
+
+---
+
+## Status
+
+Live and in use at KITSW. Recently shipped: the time-bound rental lifecycle, code-verified handover and return, and overdue enforcement.
 
 ## License
 
