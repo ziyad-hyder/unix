@@ -24,6 +24,27 @@ UniX is a campus resource-sharing platform designed for university students to e
 
 ---
 
+## Evolution of Exchange Workflows
+
+UniX has evolved its exchange experience across major versions to better protect student belongings and simplify campus borrowing:
+
+- **Initial Release (Simple Request and Accept)**:
+  - Users submitted exchange requests, which owners accepted or declined. Once accepted, items were marked complete without active lifecycle tracking.
+  - While simple, this provided no visibility for rentals into active loan periods, return deadlines, or overdue status.
+
+- **Intermediate Update (Rental Lifecycles and Due Dates)**:
+  - Introduced dedicated rental stages (Active Lease, Return Pending, Overdue), giving students a real-time countdown badge on their dashboard indicating when an item was due.
+  - Added automated reminders prior to return deadlines to help borrowers return items on schedule.
+
+- **Current Version (Two-Party Verified Handover and Return)**:
+  - Replaced unilateral "marked handed over" and "marked returned" buttons with mutual 6-digit verification codes.
+  - When borrowing an item, the student receives a handoff code to show the owner at physical pickup.
+  - When returning an item, the owner receives a return code to show the student at physical dropoff.
+  - Entering the matching code instantly confirms the exchange between both parties, ensuring both students agree on the exchange.
+  - A fallback option ("Can't use a code?") remains accessible for situations where a phone battery is depleted, ensuring students are never stuck.
+
+---
+
 ## Tech Stack
 
 - **Framework**: React 18 (Single Page Application)
