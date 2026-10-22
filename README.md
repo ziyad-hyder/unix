@@ -1,21 +1,28 @@
 # UniX
 
-**A verified campus marketplace where students rent, buy, and swap academic gear, with a rental lifecycle that enforces itself.**
+Campus marketplace for KITSW students to rent, buy or swap calculators, drafting kits and lab equipment. Access is limited to verified `@kitsw.ac.in` accounts.
 
-[**Live app**](https://unix.ziyadhyder.dev) (fallback: [unix-9o9.pages.dev](https://unix-9o9.pages.dev)) · Built for Kakatiya Institute of Technology and Science, Warangal (KITSW)
+**Live: [unix.ziyadhyder.dev](https://unix.ziyadhyder.dev)**
 
-<!-- Add a hero screenshot or 20-second GIF here. Example:
-![UniX demo](docs/demo.gif)
--->
+![Marketplace feed](docs/feed.png)
 
-Engineering students buy calculators, drafting kits, and lab components that sit unused after a semester or two. UniX keeps them circulating inside a trusted campus community: access is limited to verified `@kitsw.ac.in` accounts, and rentals are tracked from request to return so nobody has to rely on trust alone.
+<p>
+  <img src="docs/transaction-owner.png" width="39%" alt="Owner view: return verification code on an active lease" />
+  <img src="docs/transaction-borrower.png" width="39%" alt="Borrower view: entering the return code" />
+  <img src="docs/mobile.png" width="18%" alt="Mobile view" />
+</p>
 
 ---
 
-## What makes it more than a listings board
+## Overview
 
-### Rentals with a real state machine
-Rent transactions move through nine states (`PENDING`, `ACCEPTED`, `ACTIVE_LEASE`, `OVERDUE`, `RETURN_PENDING`, `COMPLETED`, `REJECTED`, `CANCELLED`, `EXPIRED`). Illegal transitions are rejected server-side, and a background scheduler handles overdue marking, reminders, and expiry without anyone clicking anything.
+Engineering students buy calculators, drafting kits and lab components that go unused after a semester or two. UniX lets verified students list these items for rent, sale or swap. Rentals are tracked from request to return: possession is confirmed with codes, a scheduler enforces due dates, and late returns have defined consequences.
+
+---
+
+## Rentals
+
+Each rental moves through a 9-state machine: `PENDING`, `ACCEPTED`, `ACTIVE_LEASE`, `OVERDUE`, `RETURN_PENDING`, `COMPLETED`, `REJECTED`, `CANCELLED` and `EXPIRED`. The backend rejects invalid transitions. A background scheduler marks overdue leases, sends email reminders and expires stale requests.
 
 ```
 PENDING -> ACCEPTED -(handoff code)-> ACTIVE_LEASE -(return code)-> COMPLETED
@@ -24,105 +31,99 @@ PENDING -> ACCEPTED -(handoff code)-> ACTIVE_LEASE -(return code)-> COMPLETED
                                        OVERDUE -(return code)-> COMPLETED
 ```
 
-### Handover and return proven by codes, not claims
-"Owner marked it handed over" and "borrower marked it returned" are the classic sources of campus disputes. UniX replaces both with mutual 6-digit codes:
+### Handoff and return codes
 
-- The borrower shows a **handoff code** to the owner at pickup.
-- The owner shows a **return code** to the borrower at drop-off.
-- Codes are derived server-side with HMAC-SHA256, never stored, shown only to the correct party, compared in constant time, and rate-limited with a temporary lockout.
-- A "Can't use a code?" fallback exists for dead phone batteries, and the system records which method was used.
+Neither party can change a rental's state alone. Mutual 6-digit codes confirm possession at pickup and drop-off. The borrower shows a handoff code to the owner at pickup, and the owner shows a return code to the borrower at drop-off.
 
-### Fairness built into enforcement
-Late returns lead to an account freeze, but only when the lease was actually confirmed by both sides. If an owner's unilateral action started the clock automatically, the borrower is never penalized. Freezes block new requests only; login, returns, and owner actions keep working.
+Codes are derived with HMAC-SHA256 from a server secret and the transaction id, so none are stored. Comparison is constant-time, and repeated failures trigger a temporary lockout. A "Can't use a code?" fallback covers dead phones, and each lease records which method started it (`CODE`, `BORROWER_CONFIRM` or `AUTO`).
 
-### Privacy-gated contact reveal
-A student's WhatsApp number is never on a public listing. It is revealed to both parties only while a transaction is in a contact-active state, and hidden again the moment it reaches a terminal state.
+### Late-return penalties
+
+An overdue lease freezes the borrower's account only if both parties confirmed the lease. Leases that started automatically after an owner's unilateral handoff are excluded. A freeze blocks new requests. Login, returns and owner actions keep working.
+
+### Contact reveal
+
+WhatsApp numbers never appear on listings. They are revealed to both parties only while a transaction is in an active state, and hidden again when it ends.
 
 ---
 
-## Engineering highlights
+## Technical challenges
 
-| Problem | Approach |
+### Cross-site auth on iOS Safari
+
+The frontend (Cloudflare Pages) and the API are on different domains. Even with `SameSite=None; Secure`, WebKit's tracking prevention blocks the session cookie. The API now also returns the JWT in the login response body, and an Axios interceptor sends it as `Authorization: Bearer`. The backend checks the header first and falls back to the cookie.
+
+### Memory limits on a 1 GB VM
+
+The API runs on Oracle's free tier, which required strict memory tuning to prevent OOM faults. Heap, metaspace, code cache and thread stacks are capped, the JVM uses the serial GC, and a swapfile acts as a last-resort buffer. An 80 MB metaspace cap crashed the app at startup, since Hibernate, Tomcat and Spring load far more classes during boot than at idle. 128 MB fixed it. A small Python watchdog (30 MB cap) monitors RAM, CPU, swap and OOM kills and sends Telegram alerts with recent logs.
+
+### Concurrent accepts
+
+Two students can accept the same listing at the same moment. Optimistic locking on the listing lets exactly one request win.
+
+### Image uploads
+
+Photos are compressed client-side on a canvas, then uploaded to Cloudflare R2 through the S3-compatible API. Images never touch the database.
+
+### Schema migrations
+
+Flyway versioned migrations run at startup, so production schema changes are applied the same way as local ones.
+
+---
+
+## Stack
+
+| Part | Technology |
 | :--- | :--- |
-| **iOS Safari silently drops cross-site cookies** (frontend and API live on different domains) | Dual-scheme auth: HttpOnly cookies for normal browsers plus an `Authorization: Bearer` header from an Axios interceptor, so sessions survive WebKit's tracking prevention. |
-| **Running a Spring Boot API on a 1 GB free-tier VM** | Capped heap, metaspace, code cache, and thread stacks, switched to the serial GC, and added a swapfile as a last-resort buffer. Lowering metaspace too far caused startup crashes, which became a documented lesson. |
-| **No crash alerts on an unmanaged VM** | Built a small Python watchdog (hard-capped at 30 MB) that watches RAM, CPU, swap, and OOM kills and sends Telegram alerts with recent logs attached. |
-| **Two students accepting the same item** | Optimistic locking on the listing, so only one request can win. |
-| **Image uploads without bloating the database** | Client-side canvas compression, then upload to Cloudflare R2 through the S3-compatible API. |
-| **Safe schema changes on a live database** | Flyway versioned migrations, applied automatically at startup. |
+| Frontend | React 18, Vite 5, React Router 6, Axios, Tailwind CSS 3, Lucide icons, Inter |
+| Backend (private repo) | Spring Boot 3, Java 21, Spring Security 6, JPA/Hibernate, Flyway |
+| Data and storage | Oracle Autonomous Database 19c (mTLS), Cloudflare R2 |
+| Hosting | Cloudflare Pages (frontend), Oracle Cloud free VM with Nginx, systemd and Let's Encrypt (API) |
+| Email | Gmail SMTP for OTPs and due-date reminders |
 
 ---
 
-## Architecture
+## Frontend
 
-```
-Student browser
-      |
-      v
-Cloudflare Pages  (React + Vite, global edge)
-      |  HTTPS, CORS-restricted
-      v
-Spring Boot REST API  (Java 21, Spring Security 6, Spring Data JPA)
-      |-- Oracle Autonomous Database  (mTLS, Flyway migrations)
-      |-- Cloudflare R2               (listing images)
-      '-- Gmail SMTP                  (OTP and due-date reminders)
-```
+Lease cards show a live countdown and switch to overdue styling when time runs out. A transaction renders different actions and codes depending on whether the viewer is the owner or the borrower. Tested on iOS Safari and Android Chrome.
 
-The backend lives in a separate private repository. This repo contains the full frontend, and I'm happy to walk through the backend design in an interview or call.
+Styling uses a custom palette called Inception: `#173541` (primary), `#557C86` (slate), `#FAFAF8` (canvas). Inter for text, monospace for verification codes. 18 unit tests cover the time and formatting utilities (`npm test`).
+
+### Brand identity
+
+The UniX mark is called "The Instrument". It is an engineering drafting compass reduced to its two legs and a central pivot. It references equipment every engineering student recognizes, so it avoids generic e-commerce icons and fintech exchange arrows.
+
+The pivot has two readings: a single origin splitting into two paths (the point of exchange), and one campus supplying different tools to its members. The Inception palette above is part of the same identity. Brand assets (SVG marks, logo lockups, apple touch icons, favicons) are in `public/` and `src/assets/`.
 
 ---
 
-## Tech stack
-
-| Layer | Technology |
-| :--- | :--- |
-| Frontend | React 18, Vite, React Router 6, Axios |
-| Styling | Tailwind CSS with custom design tokens, Inter, Lucide icons |
-| Hosting | Cloudflare Pages (frontend), Oracle Cloud always-free VM (API) |
-| Backend | Spring Boot 3, Java 21, Spring Security, JPA/Hibernate |
-| Data | Oracle Autonomous Database 19c, Flyway |
-| Storage and mail | Cloudflare R2, Gmail SMTP |
-| Ops | systemd, Nginx, Let's Encrypt, custom Telegram watchdog |
-
----
-
-## Frontend notes
-
-- **Live rental countdowns**: badges show time left on each lease and flip to overdue styling automatically.
-- **Role-aware views**: the same transaction renders different actions and codes depending on whether you are the owner or the borrower.
-- **Mobile first**: tested on iOS Safari and Android Chrome, where the cookie problem above originally showed up.
-- **Design system**: a restrained palette (`#173541` primary, `#557C86` slate, `#FAFAF8` canvas), Inter for text, and monospace numerals for verification codes.
-
----
-
-## Run it locally
+## Run locally
 
 Requires Node.js 18+ and npm 9+.
 
 ```bash
-cd frontend
 npm install
 echo "VITE_API_URL=http://localhost:8080" > .env.local
 npm run dev
 ```
 
-Open `http://localhost:5173`. The only client-side variable is `VITE_API_URL`, the base URL of the API. Production build: `npm run build` (output in `dist/`).
+Open `http://localhost:5173`. `VITE_API_URL` is the only client-side variable. The backend is in a private repo, so a local run needs an API at that URL. Production build: `npm run build` (output in `dist/`).
 
 ---
 
 ## Lessons learned
 
-1. **Static hosts need explicit API URLs.** An Axios instance without a `baseURL` calls the Pages domain and returns confusing `405` errors.
-2. **`SameSite=None; Secure` is necessary but not sufficient.** Mobile WebKit can still block third-party cookies, so don't rely on cookies alone for cross-site sessions.
-3. **`-Xmx` is not your memory limit.** Metaspace, thread stacks, and the JIT cache all sit outside the heap and can push a small VM into OOM.
-4. **Unilateral actions create disputes.** Two-party proof, with a graceful fallback, turned out to be a better design than more buttons.
+1. An Axios instance without a `baseURL` calls the static host's own domain and returns confusing `405` errors. Set `VITE_API_URL` explicitly.
+2. `SameSite=None; Secure` is insufficient on mobile WebKit. Cross-site sessions need a second path such as a bearer header.
+3. `-Xmx` caps only the heap. Metaspace, thread stacks and the JIT cache sit outside it and add up on a small VM.
+4. A penalty clock started by one party's unilateral action causes disputes. Requiring confirmation from both sides, with a fallback, was simpler than adding more buttons.
 
 ---
 
-## Status
+## Author
 
-Live and in use at KITSW. Recently shipped: the time-bound rental lifecycle, code-verified handover and return, and overdue enforcement.
+Built by [Ziyad Hyder](https://ziyadhyder.dev) (CSE, KITS Warangal), creator of [KITS One](https://ziyadhyder.dev/kits-one).
 
-## License
+UniX is an independent student project and is not affiliated with KITS Administration. The backend is in a private repo; walkthroughs available on request.
 
-All rights reserved. Proprietary software developed for campus resource sharing.
+All rights reserved.
