@@ -6,6 +6,7 @@ import ListingCard from '../components/ListingCard';
 import CreateListingModal from '../components/CreateListingModal';
 import ListingDetailModal from '../components/ListingDetailModal';
 import ProfileModal from '../components/ProfileModal';
+import Footer from '../components/Footer';
 import { 
   PlusCircle, CheckCircle2, Search, PackageOpen, 
   Layers, ArrowLeftRight, Check, X, Clock, User, AlertCircle, RefreshCw, MessageCircle 
@@ -1076,6 +1077,9 @@ export default function DashboardPage() {
         )}
 
       </main>
+
+      {/* Footer */}
+      <Footer />
 
       {/* Profile Modal */}
       <ProfileModal

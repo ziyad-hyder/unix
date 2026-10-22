@@ -2,7 +2,7 @@
 
 **A verified campus marketplace where students rent, buy, and swap academic gear, with a rental lifecycle that enforces itself.**
 
-[**Live app**](https://unix-9o9.pages.dev) · Built for Kakatiya Institute of Technology and Science, Warangal (KITSW)
+[**Live app**](https://unix.ziyadhyder.dev) (fallback: [unix-9o9.pages.dev](https://unix-9o9.pages.dev)) · Built for Kakatiya Institute of Technology and Science, Warangal (KITSW)
 
 <!-- Add a hero screenshot or 20-second GIF here. Example:
 ![UniX demo](docs/demo.gif)

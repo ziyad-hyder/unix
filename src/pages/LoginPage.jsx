@@ -6,6 +6,7 @@ import {
   AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2, Phone, MessageSquare, SkipForward
 } from 'lucide-react';
 import { UniXLogoMark } from '../components/Navbar';
+import Footer from '../components/Footer';
 
 const CAMPUSES = [
   { id: 'kitsw', name: 'KITS Warangal', domain: '@kitsw.ac.in' },
@@ -697,7 +698,8 @@ export default function LoginPage() {
 
         </div>
 
-
+        {/* Trimmed single-line footer */}
+        <Footer compact className="mt-5" />
       </div>
     </div>
   );
