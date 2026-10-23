@@ -65,6 +65,14 @@ Two students can accept the same listing at the same moment. Optimistic locking 
 
 Photos are compressed client-side on a canvas, then uploaded to Cloudflare R2 through the S3-compatible API. Images never touch the database.
 
+### PWA installation and edge deploy cache-busting
+
+UniX runs as an installable Progressive Web App (PWA) with a standalone app shell. Handling installation across mobile ecosystems required two distinct paths:
+- On Chromium browsers (Android, Chrome, Edge), the app captures `beforeinstallprompt` and renders an install card triggering the native prompt.
+- On iOS Safari (WebKit), where `beforeinstallprompt` is not supported, the banner automatically detects the platform and provides concise inline guidance ("Tap Share, then 'Add to Home Screen'").
+
+To prevent students from holding stale caches after deployments, the Service Worker keys its Workbox `cacheId` and runtime cache names directly to the Cloudflare Pages commit SHA (`CF_PAGES_COMMIT_SHA`). Deployments automatically invalidate and prune obsolete caches on activation without manual version bumps. API requests use a `NetworkFirst` strategy (5-second timeout) so marketplace availability and transaction statuses remain strictly current.
+
 ### Schema migrations
 
 Flyway versioned migrations run at startup, so production schema changes are applied the same way as local ones.
@@ -75,7 +83,7 @@ Flyway versioned migrations run at startup, so production schema changes are app
 
 | Part | Technology |
 | :--- | :--- |
-| Frontend | React 18, Vite 5, React Router 6, Axios, Tailwind CSS 3, Lucide icons, Inter |
+| Frontend | React 18, Vite 5, React Router 6, Axios, Tailwind CSS 3, Lucide icons, Inter, Vite PWA (Workbox 7) |
 | Backend (private repo) | Spring Boot 3, Java 21, Spring Security 6, JPA/Hibernate, Flyway |
 | Data and storage | Oracle Autonomous Database 19c (mTLS), Cloudflare R2 |
 | Hosting | Cloudflare Pages (frontend), Oracle Cloud free VM with Nginx, systemd and Let's Encrypt (API) |
@@ -87,7 +95,9 @@ Flyway versioned migrations run at startup, so production schema changes are app
 
 Lease cards show a live countdown and switch to overdue styling when time runs out. A transaction renders different actions and codes depending on whether the viewer is the owner or the borrower. Tested on iOS Safari and Android Chrome.
 
-Styling uses a custom palette called Inception: `#173541` (primary), `#557C86` (slate), `#FAFAF8` (canvas). Inter for text, monospace for verification codes. 18 unit tests cover the time and formatting utilities (`npm test`).
+UniX is fully installable as a standalone PWA on mobile and desktop devices. A smart, non-intrusive install banner detects current display mode, hides permanently if already running standalone, respects session dismissals (`sessionStorage`), and unmounts immediately upon installation.
+
+Styling uses a custom palette called Inception: `#173541` (primary), `#557C86` (slate), `#FAFAF8` (canvas). Inter for text, monospace for verification codes. 29 unit tests cover time formatting, countdown calculations, PWA standalone detection, and platform-specific install rules (`npm test`).
 
 ### Brand identity
 
@@ -107,7 +117,7 @@ echo "VITE_API_URL=http://localhost:8080" > .env.local
 npm run dev
 ```
 
-Open `http://localhost:5173`. `VITE_API_URL` is the only client-side variable. The backend is in a private repo, so a local run needs an API at that URL. Production build: `npm run build` (output in `dist/`).
+Open `http://localhost:5173`. `VITE_API_URL` is the only client-side variable. The backend is in a private repo, so a local run needs an API at that URL. Production build: `npm run build` (output in `dist/`). Run tests: `npm test`.
 
 ---
 
@@ -117,6 +127,7 @@ Open `http://localhost:5173`. `VITE_API_URL` is the only client-side variable. T
 2. `SameSite=None; Secure` is insufficient on mobile WebKit. Cross-site sessions need a second path such as a bearer header.
 3. `-Xmx` caps only the heap. Metaspace, thread stacks and the JIT cache sit outside it and add up on a small VM.
 4. A penalty clock started by one party's unilateral action causes disputes. Requiring confirmation from both sides, with a fallback, was simpler than adding more buttons.
+5. PWA installation behaves differently across mobile browsers. Chromium supports programmatic prompts, but iOS Safari requires inline manual instructions. Using `sessionStorage` instead of `localStorage` allows dismissals without permanently suppressing installation for interested users.
 
 ---
 
