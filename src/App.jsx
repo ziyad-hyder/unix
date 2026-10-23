@@ -4,11 +4,13 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import InstallBanner from './components/InstallBanner';
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <InstallBanner />
         <Routes>
           {/* Public Auth View */}
           <Route path="/login" element={<LoginPage />} />
