@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   X, User, Phone, CheckCircle2, AlertCircle, 
-  Save, RefreshCw, MessageSquare 
+  Save, RefreshCw, MessageSquare, Bell, BellRing 
 } from 'lucide-react';
+import { 
+  getPushSubscriptionStatus, 
+  subscribeToPush, 
+  unsubscribeFromPush,
+  sendTestPush 
+} from '../utils/push';
 
 export default function ProfileModal({ isOpen, onClose }) {
   const { user, updateUserPhone } = useAuth();
@@ -12,6 +18,32 @@ export default function ProfileModal({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Push notifications state
+  const [pushStatus, setPushStatus] = useState({
+    loading: true,
+    supported: false,
+    subscribed: false,
+    permission: 'default',
+    details: null,
+  });
+  const [pushActionLoading, setPushActionLoading] = useState(false);
+  const [pushMessage, setPushMessage] = useState(null);
+
+  const checkPush = useCallback(async () => {
+    try {
+      const status = await getPushSubscriptionStatus();
+      setPushStatus({
+        loading: false,
+        supported: status.supported,
+        subscribed: status.subscribed,
+        permission: status.permission,
+        details: status.details,
+      });
+    } catch {
+      setPushStatus((prev) => ({ ...prev, loading: false }));
+    }
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -22,11 +54,51 @@ export default function ProfileModal({ isOpen, onClose }) {
       setPhone(user?.phone || '');
       setErrorMessage('');
       setSuccessMessage('');
+      setPushMessage(null);
+      checkPush();
     }
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, user, onClose]);
+  }, [isOpen, user, onClose, checkPush]);
 
   if (!isOpen || !user) return null;
+
+  const handleTogglePush = async () => {
+    setPushMessage(null);
+    setPushActionLoading(true);
+    try {
+      if (pushStatus.subscribed) {
+        await unsubscribeFromPush();
+        setPushMessage({ type: 'success', text: 'Notifications disabled on this device.' });
+      } else {
+        await subscribeToPush();
+        setPushMessage({ type: 'success', text: 'Notifications enabled successfully!' });
+      }
+      await checkPush();
+    } catch (err) {
+      setPushMessage({ type: 'error', text: err.message || 'Failed to update push subscription.' });
+    } finally {
+      setPushActionLoading(false);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setPushMessage(null);
+    setPushActionLoading(true);
+    try {
+      const res = await sendTestPush();
+      setPushMessage({
+        type: 'success',
+        text: res?.message || 'Test push notification dispatched! Check your device.',
+      });
+    } catch (err) {
+      setPushMessage({
+        type: 'error',
+        text: err.message || 'Failed to send test push notification.',
+      });
+    } finally {
+      setPushActionLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -139,6 +211,105 @@ export default function ProfileModal({ isOpen, onClose }) {
                 <strong>Privacy Guaranteed:</strong> Your WhatsApp number is only revealed to another student when a borrow, rent, or trade transaction between you is <strong className="text-emerald-700 font-semibold">ACCEPTED</strong>.
               </span>
             </div>
+          </div>
+
+          {/* Web Push Notifications Settings */}
+          <div className="pt-3 border-t border-brand-secondary/15 space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <div
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    pushStatus.subscribed
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-brand-primary/5 text-ink-secondary border border-brand-secondary/20'
+                  }`}
+                >
+                  {pushStatus.subscribed ? (
+                    <BellRing className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <Bell className="w-4 h-4 text-ink-secondary" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-ink-primary">Push Notifications</span>
+                    {pushStatus.subscribed && (
+                      <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-ink-secondary mt-0.5 leading-relaxed">
+                    Receive instant campus alerts for borrow requests, return codes, and lease status.
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              {pushStatus.supported && pushStatus.permission !== 'denied' && (
+                <button
+                  type="button"
+                  onClick={handleTogglePush}
+                  disabled={pushActionLoading}
+                  className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    pushStatus.subscribed
+                      ? 'border border-brand-secondary/30 text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5'
+                      : 'bg-brand-primary text-white hover:bg-brand-secondary'
+                  }`}
+                >
+                  {pushActionLoading && <RefreshCw className="w-3 h-3 animate-spin" />}
+                  <span>{pushStatus.subscribed ? 'Turn Off' : 'Enable'}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Unsupported / iOS notice */}
+            {!pushStatus.loading && !pushStatus.supported && (
+              <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200/80 text-amber-900 text-[11px] leading-relaxed">
+                {pushStatus.details?.needsIOSInstall
+                  ? "On iOS, tap Share → 'Add to Home Screen' first to enable Web Push notifications."
+                  : 'Web push notifications are not supported in this browser window.'}
+              </div>
+            )}
+
+            {/* Blocked permission notice */}
+            {!pushStatus.loading && pushStatus.supported && pushStatus.permission === 'denied' && (
+              <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-[11px]">
+                Notifications are blocked in browser settings. Please allow notifications in site settings to enable.
+              </div>
+            )}
+
+            {/* Push feedback message */}
+            {pushMessage && (
+              <div
+                className={`p-2.5 rounded-lg text-[11px] flex items-center gap-1.5 ${
+                  pushMessage.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : 'bg-red-50 text-red-700 border border-red-200'
+                }`}
+              >
+                {pushMessage.type === 'success' ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                )}
+                <span>{pushMessage.text}</span>
+              </div>
+            )}
+
+            {/* Test Push trigger button when subscribed */}
+            {pushStatus.subscribed && (
+              <div className="pt-1 flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={handleSendTestPush}
+                  disabled={pushActionLoading}
+                  className="text-[11px] font-semibold text-brand-secondary hover:text-brand-primary underline transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  Send test notification to this device
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Modal Actions */}

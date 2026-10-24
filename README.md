@@ -45,6 +45,10 @@ An overdue lease freezes the borrower's account only if both parties confirmed t
 
 WhatsApp numbers never appear on listings. They are revealed to both parties only while a transaction is in an active state, and hidden again when it ends.
 
+### Push notifications
+
+Real-time push notifications alert students to request updates, lease reminders, and return deadlines even when the browser is closed. Subscriptions are managed per device and can be toggled from the user profile.
+
 ---
 
 ## Technical challenges
@@ -87,6 +91,7 @@ Flyway versioned migrations run at startup, so production schema changes are app
 | Backend (private repo) | Spring Boot 3, Java 21, Spring Security 6, JPA/Hibernate, Flyway |
 | Data and storage | Oracle Autonomous Database 19c (mTLS), Cloudflare R2 |
 | Hosting | Cloudflare Pages (frontend), Oracle Cloud free VM with Nginx, systemd and Let's Encrypt (API) |
+| Push notifications | Web Push API, Service Worker push events |
 | Email | Gmail SMTP for OTPs and due-date reminders |
 
 ---
@@ -97,7 +102,7 @@ Lease cards show a live countdown and switch to overdue styling when time runs o
 
 UniX is fully installable as a standalone PWA on mobile and desktop devices. A smart, non-intrusive install banner detects current display mode, hides permanently if already running standalone, respects session dismissals (`sessionStorage`), and unmounts immediately upon installation.
 
-Styling uses a custom palette called Inception: `#173541` (primary), `#557C86` (slate), `#FAFAF8` (canvas). Inter for text, monospace for verification codes. 29 unit tests cover time formatting, countdown calculations, PWA standalone detection, and platform-specific install rules (`npm test`).
+Styling uses a custom palette called Inception: `#173541` (primary), `#557C86` (slate), `#FAFAF8` (canvas). Inter for text, monospace for verification codes. 39 unit tests cover time formatting, countdown calculations, PWA standalone detection, platform-specific install rules, and push notification utilities (`npm test`).
 
 ### Brand identity
 
@@ -128,6 +133,7 @@ Open `http://localhost:5173`. `VITE_API_URL` is the only client-side variable. T
 3. `-Xmx` caps only the heap. Metaspace, thread stacks and the JIT cache sit outside it and add up on a small VM.
 4. A penalty clock started by one party's unilateral action causes disputes. Requiring confirmation from both sides, with a fallback, was simpler than adding more buttons.
 5. PWA installation behaves differently across mobile browsers. Chromium supports programmatic prompts, but iOS Safari requires inline manual instructions. Using `sessionStorage` instead of `localStorage` allows dismissals without permanently suppressing installation for interested users.
+6. Web push subscriptions are tied to individual browsers, not accounts. Supporting multiple endpoints per user and automatically pruning stale subscriptions on HTTP 410 (Gone) keeps notification delivery reliable across devices.
 
 ---
 

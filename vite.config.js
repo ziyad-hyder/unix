@@ -30,6 +30,9 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.js',
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'],
         manifest: {
@@ -59,27 +62,8 @@ export default defineConfig(({ mode }) => {
             },
           ],
         },
-        workbox: {
-          cacheId: `unix-${buildId}`,
-          cleanupOutdatedCaches: true,
+        injectManifest: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-          runtimeCaching: [
-            {
-              urlPattern: apiPattern,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: `unix-api-${buildId}`,
-                networkTimeoutSeconds: 5,
-                expiration: {
-                  maxEntries: 50,
-                  maxAgeSeconds: 300,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-          ],
         },
       }),
     ],

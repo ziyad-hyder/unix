@@ -1,8 +1,13 @@
 import axios from 'axios';
 
+const apiBaseUrl =
+  (typeof import.meta !== 'undefined' && import.meta.env
+    ? import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL
+    : '') || '';
+
 // Create base Axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '',
+  baseURL: apiBaseUrl,
   withCredentials: true, // Crucial: Always send/receive httpOnly JWT cookies cross-origin
   headers: {
     'Content-Type': 'application/json',
@@ -10,7 +15,9 @@ const api = axios.create({
   },
 });
 
-console.log("API base URL:", import.meta.env.VITE_API_URL);
+if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+  console.log("API base URL:", apiBaseUrl);
+}
 
 // Request interceptor:
 // 1. Attach Bearer token from localStorage for reliable cross-origin auth (iOS Safari, mobile browsers)
@@ -34,7 +41,7 @@ api.interceptors.response.use(
       localStorage.removeItem('unix_token');
     }
 
-    if (import.meta.env.DEV) {
+    if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
       console.error('[API Response Error]:', error);
     }
 
