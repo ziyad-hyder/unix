@@ -47,7 +47,7 @@ WhatsApp numbers never appear on listings. They are revealed to both parties onl
 
 ### Push notifications
 
-Real-time push notifications alert students to request updates, lease reminders, and return deadlines even when the browser is closed. Subscriptions are managed per device and can be toggled from the user profile.
+Real-time push notifications keep students informed throughout the transaction lifecycle, even when the browser is closed. Automated triggers alert parties when new requests arrive, requests are accepted or expired, pickup codes are ready, rental periods start, returns are due (24-hour and 2-hour warnings), items become overdue, or returns are verified. Critical events (such as receipt confirmation, overdue warnings, and return confirmations) automatically send an email backup. Subscriptions are managed per device and can be toggled anytime from the user profile.
 
 ---
 
