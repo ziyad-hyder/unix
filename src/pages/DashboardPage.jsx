@@ -310,10 +310,10 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-brand-bg flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-7">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-7">
         
         {/* Top Hero / Header Section */}
-        <div className="py-4 border-b border-brand-secondary/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="pt-1 pb-3 sm:py-4 border-b border-brand-secondary/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div className="max-w-2xl">
 
 
@@ -338,7 +338,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Global Navigation Tabs: Marketplace vs My Transactions */}
-        <div className="mt-6 flex items-center gap-2 border-b border-brand-secondary/20 pb-3">
+        <div className="mt-4 sm:mt-6 flex items-center gap-2 border-b border-brand-secondary/20 pb-3 overflow-x-auto scrollbar-none">
           <button
             onClick={() => setActiveTab('MARKETPLACE')}
             className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
@@ -413,7 +413,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Type Filters */}
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
                 <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider">Type:</span>
                 <div className="flex items-center gap-1">
                   {TYPE_FILTERS.map((t) => (
@@ -518,7 +518,7 @@ export default function DashboardPage() {
 
             {/* Section 1: Incoming Requests (Owner View) */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 gap-2">
                 <div>
                   <h2 className="text-base font-bold text-ink-primary">
                     Incoming Requests <span className="text-ink-secondary/70 font-normal">({incomingRequests.length})</span>
@@ -529,7 +529,7 @@ export default function DashboardPage() {
                 </div>
                 <button
                   onClick={fetchTransactions}
-                  className="inline-flex items-center gap-1.5 text-xs text-brand-secondary hover:text-brand-primary font-semibold cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-xs text-brand-secondary hover:text-brand-primary font-semibold cursor-pointer shrink-0"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>Refresh</span>
@@ -547,21 +547,21 @@ export default function DashboardPage() {
                   {incomingRequests.map((req) => (
                     <div
                       key={req.id}
-                      className="bg-white rounded-xl border border-brand-secondary/20 p-4 flex flex-col justify-between space-y-3"
+                      className="bg-white rounded-xl border border-brand-secondary/20 p-4 flex flex-col justify-between space-y-3 min-w-0"
                     >
                       <div>
                         {/* Top: Item Title & Badges */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded-tight mr-2">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded-tight mr-1.5 inline-block align-middle">
                               {req.listing?.type}
                             </span>
-                            <h3 className="font-bold text-ink-primary text-xs inline">
+                            <h3 className="font-bold text-ink-primary text-xs sm:text-sm inline align-middle leading-snug break-words">
                               {req.listing?.title}
                             </h3>
                           </div>
 
-                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                          <div className="flex items-center gap-1.5 flex-wrap sm:shrink-0 sm:justify-end">
                             <StatusBadge status={req.status} />
                             <CountdownBadge req={req} />
 
@@ -571,10 +571,10 @@ export default function DashboardPage() {
                                 href={`https://wa.me/${req.requester.phone.replace(/\D/g, '')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-tight text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs"
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-tight text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs shrink-0"
                                 title={`Chat with ${req.requester.fullName || 'student'} on WhatsApp`}
                               >
-                                <MessageCircle className="w-3 h-3" />
+                                <MessageCircle className="w-3 h-3 shrink-0" />
                                 <span>WhatsApp</span>
                               </a>
                             )}
@@ -582,20 +582,20 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Requester Info */}
-                        <div className="mt-3 p-2.5 rounded-control bg-brand-bg/60 border border-brand-secondary/15 text-xs flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold text-[10px]">
+                        <div className="mt-3 p-2.5 rounded-control bg-brand-bg/60 border border-brand-secondary/15 text-xs flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="w-6 h-6 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold text-[10px] shrink-0">
                               <User className="w-3 h-3" />
                             </div>
-                            <div>
-                              <p className="font-semibold text-ink-primary text-xs">{req.requester?.fullName || 'Student'}</p>
-                              <p className="font-mono text-[10px] text-ink-secondary">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-ink-primary text-xs truncate">{req.requester?.fullName || 'Student'}</p>
+                              <p className="font-mono text-[10px] text-ink-secondary truncate">
                                 {req.requester?.email}
                                 {req.requester?.phone ? ` | ${req.requester.phone}` : ''}
                               </p>
                             </div>
                           </div>
-                          <span className="text-[10px] text-ink-secondary font-mono">
+                          <span className="text-[10px] text-ink-secondary font-mono shrink-0">
                             {formatDateTime(req.createdAt)}
                           </span>
                         </div>
@@ -622,7 +622,7 @@ export default function DashboardPage() {
                       {/* Action Buttons & Contact Status for Listing Owner */}
                       <div className="pt-2 border-t border-brand-secondary/15">
                         {req.status === 'PENDING' && (
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-2 flex-wrap">
                             <button
                               onClick={() => handleUpdateStatus(req.id, 'REJECTED')}
                               disabled={actionLoadingId === req.id}
@@ -651,11 +651,11 @@ export default function DashboardPage() {
                           <div className="space-y-2.5">
                             {!req.handedOverAt ? (
                               <div className="p-3 rounded-control bg-brand-bg border border-brand-secondary/20 space-y-2">
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                                   <span className="text-xs font-semibold text-brand-primary">Verify Physical Handover</span>
                                   <span className="text-[11px] text-ink-secondary">Ask borrower for their 6-digit code</span>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                   <input
                                     type="text"
                                     inputMode="numeric"
@@ -665,12 +665,12 @@ export default function DashboardPage() {
                                     value={codeInputs[req.id] || ''}
                                     onChange={(e) => handleCodeInputChange(req.id, e.target.value)}
                                     disabled={actionLoadingId === req.id}
-                                    className="w-32 px-3 py-1.5 text-center font-mono text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                                    className="w-full sm:w-32 px-3 py-1.5 text-center font-mono text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
                                   />
                                   <button
                                     onClick={() => handleVerifyCode(req.id, 'verify-handoff', codeInputs[req.id], 'Handoff verified successfully. Lease is now active.')}
                                     disabled={actionLoadingId === req.id || (codeInputs[req.id] || '').length !== 6}
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                                   >
                                     {actionLoadingId === req.id ? (
                                       <RefreshCw className="w-3 h-3 animate-spin" />
@@ -680,7 +680,7 @@ export default function DashboardPage() {
                                     <span>Verify Handoff</span>
                                   </button>
                                 </div>
-                                <div className="pt-1 border-t border-brand-secondary/15 flex items-center justify-between">
+                                <div className="pt-1 border-t border-brand-secondary/15 flex items-center justify-between flex-wrap gap-1">
                                   <span className="text-[10px] text-ink-secondary">Can't use a code?</span>
                                   <button
                                     type="button"
@@ -698,7 +698,7 @@ export default function DashboardPage() {
                               </div>
                             ) : (
                               <div className="text-xs text-ink-secondary flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5 text-brand-secondary" />
+                                <Clock className="w-3.5 h-3.5 text-brand-secondary shrink-0" />
                                 <span>Manual handover recorded. Waiting for borrower to confirm receipt.</span>
                               </div>
                             )}
@@ -706,14 +706,14 @@ export default function DashboardPage() {
                         )}
 
                         {req.status === 'ACCEPTED' && req.listing?.type !== 'RENT' && (
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <span className="text-[11px] text-ink-secondary">
                               Meet peer and complete exchange.
                             </span>
                             <button
                               onClick={() => handleAction(req.id, 'complete', 'Transaction marked as completed.')}
                               disabled={actionLoadingId === req.id}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary transition-colors cursor-pointer disabled:opacity-50"
+                              className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary transition-colors cursor-pointer disabled:opacity-50 w-full sm:w-auto"
                             >
                               {actionLoadingId === req.id ? (
                                 <RefreshCw className="w-3 h-3 animate-spin" />
@@ -754,7 +754,7 @@ export default function DashboardPage() {
                         )}
 
                         {req.status === 'RETURN_PENDING' && (
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-2 flex-wrap">
                             {!req.disputed && (
                               <button
                                 onClick={() => handleAction(req.id, 'dispute', 'Return disputed. Auto-completion suspended.')}
@@ -828,21 +828,21 @@ export default function DashboardPage() {
                   {outgoingRequests.map((req) => (
                     <div
                       key={req.id}
-                      className="bg-white rounded-xl border border-brand-secondary/20 p-4 flex flex-col justify-between space-y-3"
+                      className="bg-white rounded-xl border border-brand-secondary/20 p-4 flex flex-col justify-between space-y-3 min-w-0"
                     >
                       <div>
                         {/* Top: Item Title & Badges */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded-tight mr-2">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded-tight mr-1.5 inline-block align-middle">
                               {req.listing?.type}
                             </span>
-                            <h3 className="font-bold text-ink-primary text-xs inline">
+                            <h3 className="font-bold text-ink-primary text-xs sm:text-sm inline align-middle leading-snug break-words">
                               {req.listing?.title}
                             </h3>
                           </div>
 
-                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                          <div className="flex items-center gap-1.5 flex-wrap sm:shrink-0 sm:justify-end">
                             <StatusBadge status={req.status} />
                             <CountdownBadge req={req} />
 
@@ -852,10 +852,10 @@ export default function DashboardPage() {
                                 href={`https://wa.me/${req.listing.owner.phone.replace(/\D/g, '')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-tight text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs"
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-tight text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs shrink-0"
                                 title={`Chat with ${req.listing.owner.fullName || 'owner'} on WhatsApp`}
                               >
-                                <MessageCircle className="w-3 h-3" />
+                                <MessageCircle className="w-3 h-3 shrink-0" />
                                 <span>WhatsApp</span>
                               </a>
                             )}
@@ -863,19 +863,19 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Owner contact details */}
-                        <div className="mt-3 p-2.5 rounded-control bg-brand-bg/60 border border-brand-secondary/15 text-xs flex items-center justify-between">
-                          <div>
+                        <div className="mt-3 p-2.5 rounded-control bg-brand-bg/60 border border-brand-secondary/15 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
+                          <div className="min-w-0 flex-1">
                             <p className="text-[10px] text-ink-secondary">Listing Owner</p>
-                            <p className="font-mono text-xs font-semibold text-ink-primary">
+                            <p className="font-mono text-xs font-semibold text-ink-primary truncate">
                               {req.listing?.owner?.fullName ? `${req.listing.owner.fullName} (${req.listing.owner.email})` : req.listing?.owner?.email}
                             </p>
                             {req.listing?.owner?.phone && (
-                              <p className="font-mono text-[10px] text-emerald-800 font-semibold mt-0.5">
+                              <p className="font-mono text-[10px] text-emerald-800 font-semibold mt-0.5 truncate">
                                 Phone: {req.listing.owner.phone}
                               </p>
                             )}
                           </div>
-                          <div className="text-right">
+                          <div className="text-left sm:text-right shrink-0">
                             <p className="text-[10px] text-ink-secondary">Requested</p>
                             <p className="font-mono text-xs text-ink-secondary">{formatDateTime(req.createdAt)}</p>
                           </div>
@@ -903,12 +903,12 @@ export default function DashboardPage() {
                       {/* Outgoing Action Buttons */}
                       <div className="pt-2 border-t border-brand-secondary/15">
                         {req.status === 'PENDING' && (
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <span className="text-[11px] text-ink-secondary">Waiting for owner response.</span>
                             <button
                               onClick={() => handleAction(req.id, 'cancel', 'Request cancelled.')}
                               disabled={actionLoadingId === req.id}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50"
+                              className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50 w-full sm:w-auto"
                             >
                               <X className="w-3.5 h-3.5" />
                               <span>Cancel Request</span>
@@ -932,11 +932,11 @@ export default function DashboardPage() {
                               </div>
                             )}
 
-                            <div className="flex items-center justify-between gap-2 pt-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
                               <button
                                 onClick={() => handleAction(req.id, 'cancel', 'Request cancelled.')}
                                 disabled={actionLoadingId === req.id}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50 w-full sm:w-auto"
                               >
                                 <X className="w-3.5 h-3.5" />
                                 <span>Cancel</span>
@@ -950,7 +950,7 @@ export default function DashboardPage() {
                                   }
                                 }}
                                 disabled={actionLoadingId === req.id}
-                                className="text-[11px] font-medium text-brand-secondary hover:text-brand-primary underline cursor-pointer disabled:opacity-50"
+                                className="text-[11px] font-medium text-brand-secondary hover:text-brand-primary underline cursor-pointer disabled:opacity-50 text-left"
                               >
                                 Can't use a code? Use manual handover
                               </button>
@@ -959,12 +959,12 @@ export default function DashboardPage() {
                         )}
 
                         {req.status === 'ACCEPTED' && req.listing?.type !== 'RENT' && (
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <span className="text-[11px] text-ink-secondary">Meet owner in person to complete exchange.</span>
                             <button
                               onClick={() => handleAction(req.id, 'cancel', 'Request cancelled.')}
                               disabled={actionLoadingId === req.id}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50"
+                              className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50 w-full sm:w-auto"
                             >
                               <X className="w-3.5 h-3.5" />
                               <span>Cancel</span>
@@ -982,7 +982,7 @@ export default function DashboardPage() {
                               <p className="text-[11px] text-ink-secondary">
                                 Ask the owner for their 6-digit return code at physical return.
                               </p>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                 <input
                                   type="text"
                                   inputMode="numeric"
@@ -992,12 +992,12 @@ export default function DashboardPage() {
                                   value={codeInputs[req.id] || ''}
                                   onChange={(e) => handleCodeInputChange(req.id, e.target.value)}
                                   disabled={actionLoadingId === req.id}
-                                  className="w-32 px-3 py-1.5 text-center font-mono text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                                  className="w-full sm:w-32 px-3 py-1.5 text-center font-mono text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
                                 />
                                 <button
                                   onClick={() => handleVerifyCode(req.id, 'verify-return', codeInputs[req.id], 'Return verified successfully. Transaction completed.')}
                                   disabled={actionLoadingId === req.id || (codeInputs[req.id] || '').length !== 6}
-                                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                                 >
                                   {actionLoadingId === req.id ? (
                                     <RefreshCw className="w-3 h-3 animate-spin" />
@@ -1007,7 +1007,7 @@ export default function DashboardPage() {
                                   <span>Verify Return</span>
                                 </button>
                               </div>
-                              <div className="pt-1 border-t border-brand-secondary/15 flex items-center justify-between">
+                              <div className="pt-1 border-t border-brand-secondary/15 flex items-center justify-between flex-wrap gap-1">
                                 <span className="text-[10px] text-ink-secondary">Can't use a code?</span>
                                 <button
                                   type="button"
