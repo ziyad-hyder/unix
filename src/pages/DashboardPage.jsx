@@ -14,7 +14,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { getFriendlyErrorMessage } from '../utils/errors';
-import { formatDateTime, formatDuration } from '../utils/time';
+import { formatDateTime, formatDuration, formatAutoCompleteRemaining } from '../utils/time';
 import { toWhatsAppUrl } from '../utils/phone';
 import { mergePage } from '../utils/pagination';
 import { AUTO_START_HOURS, AUTO_COMPLETE_HOURS } from '../utils/policy';
@@ -99,8 +99,21 @@ function useMinuteTicker() {
 
 function CountdownBadge({ req }) {
   const now = useMinuteTicker();
-  if (!req || !req.dueAt) return null;
+  if (!req) return null;
   const { status } = req;
+
+  if (status === 'RETURN_PENDING' && !req.disputed && req.returnedAt) {
+    const text = formatAutoCompleteRemaining(req.returnedAt, now, AUTO_COMPLETE_HOURS);
+    const displayText = text === 'Completing shortly' ? 'Completing shortly' : `Auto-completes in ${text.replace('auto-completes in ', '')}`;
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-tight text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+        <Clock className="w-3 h-3 text-emerald-600" />
+        <span>{displayText}</span>
+      </span>
+    );
+  }
+
+  if (!req.dueAt) return null;
   const dueTime = new Date(req.dueAt).getTime();
   if (isNaN(dueTime)) return null;
 
@@ -143,6 +156,7 @@ function CountdownBadge({ req }) {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const now = useMinuteTicker();
 
   // Active Tab: 'MARKETPLACE' | 'TRANSACTIONS'
   const [activeTab, setActiveTab] = useState('MARKETPLACE');
@@ -948,7 +962,7 @@ export default function DashboardPage() {
               ) : (
                 <span className="text-emerald-800 font-semibold flex items-center gap-1 text-xs">
                   <Clock className="w-3.5 h-3.5 text-brand-secondary shrink-0" />
-                  <span>Return declared by borrower (auto-completes in {AUTO_COMPLETE_HOURS}h).</span>
+                  <span>Return declared by borrower ({formatAutoCompleteRemaining(req.returnedAt, now, AUTO_COMPLETE_HOURS)}).</span>
                 </span>
               )}
             </div>
@@ -1290,7 +1304,7 @@ export default function DashboardPage() {
             ) : (
               <span className="text-emerald-800 font-semibold flex items-center gap-1 text-xs">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Return declared. Awaiting owner confirmation (auto-completes in {AUTO_COMPLETE_HOURS}h).</span>
+                <span>Return declared. Awaiting owner confirmation ({formatAutoCompleteRemaining(req.returnedAt, now, AUTO_COMPLETE_HOURS)}).</span>
               </span>
             )}
           </div>

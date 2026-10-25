@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { DISPLAY_TZ, formatDateTime, formatDuration } from './time.js';
+import { DISPLAY_TZ, formatDateTime, formatDuration, formatAutoCompleteRemaining } from './time.js';
 
 describe('time.js test suite', () => {
   describe('DISPLAY_TZ', () => {
@@ -105,6 +105,68 @@ describe('time.js test suite', () => {
     test('null and NaN return empty string', () => {
       assert.strictEqual(formatDuration(null), '');
       assert.strictEqual(formatDuration(NaN), '');
+    });
+  });
+
+  describe('formatAutoCompleteRemaining', () => {
+    const baseNow = new Date('2026-10-25T12:00:00Z').getTime();
+
+    test('calculates remaining time when deadline is in the future', () => {
+      // Returned 24 hours ago, 48h policy -> 24 hours remaining -> 1 day
+      const returnedAt = new Date(baseNow - 24 * 3600000).toISOString();
+      assert.strictEqual(
+        formatAutoCompleteRemaining(returnedAt, baseNow, 48),
+        'auto-completes in 1 day'
+      );
+    });
+
+    test('calculates remaining hours and minutes under 24 hours', () => {
+      // Returned 46 hours ago, 48h policy -> 2 hours remaining
+      const returnedAt = new Date(baseNow - 46 * 3600000).toISOString();
+      assert.strictEqual(
+        formatAutoCompleteRemaining(returnedAt, baseNow, 48),
+        'auto-completes in 2 hours'
+      );
+
+      // Returned 47 hours and 15 mins ago -> 45 minutes remaining
+      const returnedAtMins = new Date(baseNow - (47 * 3600000 + 15 * 60000)).toISOString();
+      assert.strictEqual(
+        formatAutoCompleteRemaining(returnedAtMins, baseNow, 48),
+        'auto-completes in 45 minutes'
+      );
+    });
+
+    test('returns "Completing shortly" when deadline has passed', () => {
+      // Returned 49 hours ago -> overdue by 1 hour
+      const returnedAt = new Date(baseNow - 49 * 3600000).toISOString();
+      assert.strictEqual(
+        formatAutoCompleteRemaining(returnedAt, baseNow, 48),
+        'Completing shortly'
+      );
+    });
+
+    test('returns "Completing shortly" when exact deadline is reached', () => {
+      // Returned exactly 48 hours ago
+      const returnedAt = new Date(baseNow - 48 * 3600000).toISOString();
+      assert.strictEqual(
+        formatAutoCompleteRemaining(returnedAt, baseNow, 48),
+        'Completing shortly'
+      );
+    });
+
+    test('handles missing or invalid timestamps gracefully', () => {
+      assert.strictEqual(
+        formatAutoCompleteRemaining(null, baseNow, 48),
+        'auto-completes in 48h'
+      );
+      assert.strictEqual(
+        formatAutoCompleteRemaining(undefined, baseNow, 48),
+        'auto-completes in 48h'
+      );
+      assert.strictEqual(
+        formatAutoCompleteRemaining('invalid-date', baseNow, 48),
+        'auto-completes in 48h'
+      );
     });
   });
 });

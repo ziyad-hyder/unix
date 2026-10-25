@@ -101,3 +101,31 @@ export function formatDuration(ms) {
   const minStr = `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
   return `${hourStr} ${minStr}`;
 }
+
+/**
+ * Calculates and formats the auto-complete remaining duration for RETURN_PENDING transactions.
+ * Uses returnedAt timestamp + autoCompleteHours window compared to current time.
+ *
+ * @param {string|Date|number} returnedAt - Timestamp when return was declared
+ * @param {number} [now=Date.now()] - Current epoch timestamp in ms
+ * @param {number} [autoCompleteHours=48] - Auto-complete policy hours
+ * @returns {string} Formatted remaining text ("auto-completes in X" or "Completing shortly")
+ */
+export function formatAutoCompleteRemaining(returnedAt, now = Date.now(), autoCompleteHours = 48) {
+  if (!returnedAt) {
+    return `auto-completes in ${autoCompleteHours}h`;
+  }
+  const returnedTime = new Date(returnedAt).getTime();
+  if (isNaN(returnedTime)) {
+    return `auto-completes in ${autoCompleteHours}h`;
+  }
+
+  const deadline = returnedTime + autoCompleteHours * 3600000;
+  const diffMs = deadline - now;
+
+  if (diffMs <= 0) {
+    return 'Completing shortly';
+  }
+
+  return `auto-completes in ${formatDuration(diffMs)}`;
+}
