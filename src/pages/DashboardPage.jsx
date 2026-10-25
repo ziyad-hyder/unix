@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import Navbar from '../components/Navbar';
@@ -191,42 +191,84 @@ export default function DashboardPage() {
     }));
   };
 
+  const listingsRequestIdRef = useRef(0);
+  const lastListingsFetchTimeRef = useRef(Date.now());
+  const transactionsRequestIdRef = useRef(0);
+  const lastTransactionsJsonRef = useRef('');
+  const actionLoadingIdRef = useRef(actionLoadingId);
+
+  useEffect(() => {
+    actionLoadingIdRef.current = actionLoadingId;
+  }, [actionLoadingId]);
+
   // 1. Fetch Listings
-  const fetchListings = useCallback(async () => {
+  const fetchListings = useCallback(async (opts = {}) => {
+    const silent = Boolean(opts && typeof opts === 'object' && opts.silent === true);
+    const requestId = ++listingsRequestIdRef.current;
+
     try {
-      setListingsLoading(true);
-      setListingsError(null);
+      if (!silent) {
+        setListingsLoading(true);
+        setListingsError(null);
+      }
       const params = { status: 'ACTIVE' };
       if (selectedCategory !== 'ALL') params.category = selectedCategory;
       if (selectedType !== 'ALL') params.type = selectedType;
 
       const res = await api.get('/api/listings', { params });
+      if (requestId !== listingsRequestIdRef.current) return;
+
       if (res.data?.success && res.data?.data) {
         setListings(res.data.data.content || []);
+        lastListingsFetchTimeRef.current = Date.now();
       }
     } catch (err) {
+      if (requestId !== listingsRequestIdRef.current) return;
       console.error('Failed to fetch listings:', err);
-      setListingsError(getFriendlyErrorMessage(err, "Can't reach the server. Check your connection and try again."));
+      if (!silent) {
+        setListingsError(getFriendlyErrorMessage(err, "Can't reach the server. Check your connection and try again."));
+      }
     } finally {
-      setListingsLoading(false);
+      if (requestId === listingsRequestIdRef.current && !silent) {
+        setListingsLoading(false);
+      }
     }
   }, [selectedCategory, selectedType]);
 
   // 2. Fetch My Transactions
-  const fetchTransactions = useCallback(async () => {
+  const fetchTransactions = useCallback(async (opts = {}) => {
+    const silent = Boolean(opts && typeof opts === 'object' && opts.silent === true);
+    const requestId = ++transactionsRequestIdRef.current;
+
     try {
-      setTransactionsLoading(true);
-      setTransactionsError(null);
+      if (!silent) {
+        setTransactionsLoading(true);
+        setTransactionsError(null);
+      }
       const res = await api.get('/api/transactions/me');
+      if (requestId !== transactionsRequestIdRef.current) return;
+
       if (res.data?.success && res.data?.data) {
-        setIncomingRequests(res.data.data.receivedRequests || []);
-        setOutgoingRequests(res.data.data.sentRequests || []);
+        const nextReceived = res.data.data.receivedRequests || [];
+        const nextSent = res.data.data.sentRequests || [];
+        const nextJson = JSON.stringify({ received: nextReceived, sent: nextSent });
+
+        if (nextJson !== lastTransactionsJsonRef.current) {
+          lastTransactionsJsonRef.current = nextJson;
+          setIncomingRequests(nextReceived);
+          setOutgoingRequests(nextSent);
+        }
       }
     } catch (err) {
+      if (requestId !== transactionsRequestIdRef.current) return;
       console.error('Failed to fetch transactions:', err);
-      setTransactionsError(getFriendlyErrorMessage(err, "Can't reach the server. Check your connection and try again."));
+      if (!silent) {
+        setTransactionsError(getFriendlyErrorMessage(err, "Can't reach the server. Check your connection and try again."));
+      }
     } finally {
-      setTransactionsLoading(false);
+      if (requestId === transactionsRequestIdRef.current && !silent) {
+        setTransactionsLoading(false);
+      }
     }
   }, []);
 
@@ -234,6 +276,49 @@ export default function DashboardPage() {
     fetchListings();
     fetchTransactions();
   }, [fetchListings, fetchTransactions]);
+
+  // Live polling for transactions: 20s interval while on TRANSACTIONS tab and document visible
+  useEffect(() => {
+    if (activeTab !== 'TRANSACTIONS') return;
+
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      if (actionLoadingIdRef.current != null) return;
+      fetchTransactions({ silent: true });
+    }, 20000);
+
+    return () => clearInterval(interval);
+  }, [activeTab, fetchTransactions]);
+
+  // Refetch on visibility change and window online
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return;
+
+      if (activeTab === 'TRANSACTIONS' && actionLoadingIdRef.current == null) {
+        fetchTransactions({ silent: true });
+      }
+
+      if (Date.now() - lastListingsFetchTimeRef.current > 60000) {
+        fetchListings({ silent: true });
+      }
+    };
+
+    const handleOnline = () => {
+      if (activeTab === 'TRANSACTIONS' && actionLoadingIdRef.current == null) {
+        fetchTransactions({ silent: true });
+      }
+      fetchListings({ silent: true });
+    };
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [activeTab, fetchTransactions, fetchListings]);
 
   // 3. Handle Status Update (Accept / Reject)
   const handleUpdateStatus = async (transactionId, newStatus) => {
