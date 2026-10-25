@@ -2,6 +2,8 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   DEFAULT_INSTALL_COPY,
+  DISMISS_KEY,
+  DISMISS_DURATION_MS,
   isRunningStandalone,
   isIOSSafari,
 } from './pwa.js';
@@ -15,6 +17,11 @@ describe('pwa.js logic & copy suite', () => {
       assert.ok(DEFAULT_INSTALL_COPY.iosDescription.includes('Share'));
       assert.ok(DEFAULT_INSTALL_COPY.iosDescription.includes('Add to Home Screen'));
       assert.strictEqual(DEFAULT_INSTALL_COPY.installText, 'Install');
+    });
+
+    test('dismissal constants specify 7 days persistence', () => {
+      assert.strictEqual(DISMISS_KEY, 'unix_pwa_banner_dismissed_until');
+      assert.strictEqual(DISMISS_DURATION_MS, 7 * 24 * 60 * 60 * 1000);
     });
   });
 

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   School, User, Lock, KeyRound, ArrowRight, CheckCircle,
-  AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2, Phone, MessageSquare, SkipForward
+  AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2, Phone, MessageSquare
 } from 'lucide-react';
 import { UniXLogoMark } from '../components/Navbar';
 import Footer from '../components/Footer';

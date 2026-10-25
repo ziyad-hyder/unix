@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useId } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import useModalA11y from '../hooks/useModalA11y';
 import ConfirmDialog from './ConfirmDialog';
 import { 
   X, CheckCircle2, AlertCircle, RefreshCw, Send, User, 
-  Edit3, Trash2, ArrowLeft, Save, AlertTriangle, Clock 
+  Edit3, Trash2, ArrowLeft, Save, Clock 
 } from 'lucide-react';
 import { getFriendlyErrorMessage } from '../utils/errors';
 import { formatDateTime, formatDuration } from '../utils/time';

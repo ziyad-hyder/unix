@@ -6,7 +6,9 @@ export const DEFAULT_INSTALL_COPY = {
   dismissAriaLabel: 'Dismiss install banner',
 };
 
-export const DISMISS_SESSION_KEY = 'unix_pwa_banner_dismissed';
+export const DISMISS_KEY = 'unix_pwa_banner_dismissed_until';
+export const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+export const DISMISS_SESSION_KEY = DISMISS_KEY; // For backwards compatibility
 
 /**
  * Checks if the application is currently running in standalone display mode (installed PWA)

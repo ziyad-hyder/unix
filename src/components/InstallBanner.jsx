@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Download, X } from 'lucide-react';
 import {
   DEFAULT_INSTALL_COPY,
+  DISMISS_KEY,
+  DISMISS_DURATION_MS,
   DISMISS_SESSION_KEY,
   isRunningStandalone,
   isIOSSafari,
@@ -9,6 +12,8 @@ import {
 
 export {
   DEFAULT_INSTALL_COPY,
+  DISMISS_KEY,
+  DISMISS_DURATION_MS,
   DISMISS_SESSION_KEY,
   isRunningStandalone,
   isIOSSafari,
@@ -22,6 +27,7 @@ export default function InstallBanner({
   dismissAriaLabel = DEFAULT_INSTALL_COPY.dismissAriaLabel,
   className = '',
 }) {
+  const location = useLocation();
   const [isInstalled, setIsInstalled] = useState(false);
   const [isDismissed, setIsDismissed] = useState(true); // default true until verified in useEffect
   const [isIOS, setIsIOS] = useState(false);
@@ -34,10 +40,11 @@ export default function InstallBanner({
       return;
     }
 
-    // 2. Check if dismissed for current session
+    // 2. Check if dismissed for 7 days
     try {
-      const dismissed = sessionStorage.getItem(DISMISS_SESSION_KEY) === 'true';
-      setIsDismissed(dismissed);
+      const dismissedUntil = localStorage.getItem(DISMISS_KEY);
+      const isStillDismissed = dismissedUntil && Number(dismissedUntil) > Date.now();
+      setIsDismissed(Boolean(isStillDismissed));
     } catch {
       setIsDismissed(false);
     }
@@ -83,9 +90,9 @@ export default function InstallBanner({
 
   const handleDismiss = () => {
     try {
-      sessionStorage.setItem(DISMISS_SESSION_KEY, 'true');
+      localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_DURATION_MS));
     } catch {
-      // Ignore sessionStorage errors in restricted privacy modes
+      // Ignore localStorage errors in restricted privacy modes
     }
     setIsDismissed(true);
   };
@@ -106,10 +113,12 @@ export default function InstallBanner({
   };
 
   // Visibility logic:
+  // - Never show on /login route
   // - Never show if already installed
-  // - Never show if dismissed in this session
+  // - Never show if dismissed in past 7 days
   // - Show if on iOS Safari (manual flow) OR beforeinstallprompt has fired and prompt is stashed
-  const shouldShow = !isInstalled && !isDismissed && (isIOS || deferredPrompt !== null);
+  const isLoginRoute = location.pathname === '/login';
+  const shouldShow = !isLoginRoute && !isInstalled && !isDismissed && (isIOS || deferredPrompt !== null);
 
   if (!shouldShow) {
     return null;
@@ -117,7 +126,7 @@ export default function InstallBanner({
 
   return (
     <aside
-      role="banner"
+      role="complementary"
       aria-label={title}
       className={`fixed bottom-4 right-4 z-50 w-[calc(100%-2rem)] max-w-sm bg-white rounded-xl border border-brand-secondary/25 shadow-xl shadow-brand-primary/10 p-4 transition-all duration-200 ${className}`}
     >

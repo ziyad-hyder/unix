@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useId } from 'react';
+import React, { useState, useRef, useId } from 'react';
 import api from '../api/api';
 import { compressImage } from '../utils/imageUtils';
 import { X, PlusCircle, AlertCircle, RefreshCw, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
@@ -436,7 +436,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
 
             {!imagePreview ? (
               <label
-                htmlFor="listing-image-upload"
+                htmlFor={imageInputId}
                 className={`flex flex-col items-center justify-center p-4 border border-dashed border-brand-secondary/30 rounded-xl bg-brand-bg/40 hover:bg-brand-primary/5 hover:border-brand-secondary/60 cursor-pointer transition-colors ${
                   imageLoading ? 'opacity-50 pointer-events-none' : ''
                 }`}
