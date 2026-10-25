@@ -66,7 +66,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
   };
 
   const modalRef = useModalA11y(
-    isOpen && !showDiscardConfirm,
+    isOpen,
     handleRequestClose,
     { closeOnEscape: !loading && !imageLoading }
   );

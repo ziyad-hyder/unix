@@ -1,11 +1,45 @@
 import { useEffect, useRef } from 'react';
 
+// Module-level stack of open modals
+export const modalStack = [];
+
+// Ref-counted body scroll lock
+let openModalCount = 0;
+let originalOverflow = '';
+
+export function getOpenModalCount() {
+  return openModalCount;
+}
+
+export function lockBodyScroll() {
+  if (typeof document === 'undefined') return;
+  if (openModalCount === 0) {
+    originalOverflow = document.body.style.overflow || '';
+    document.body.style.overflow = 'hidden';
+  }
+  openModalCount++;
+}
+
+export function unlockBodyScroll() {
+  if (typeof document === 'undefined') return;
+  openModalCount = Math.max(0, openModalCount - 1);
+  if (openModalCount === 0) {
+    document.body.style.overflow = originalOverflow;
+    originalOverflow = '';
+  }
+}
+
+export function _resetModalState() {
+  modalStack.length = 0;
+  openModalCount = 0;
+  originalOverflow = '';
+}
+
 /**
  * Custom hook for accessible modal behavior:
- * - Focus trap within the modal
- * - Body scroll lock
- * - Esc key to close (if closeOnEscape is true)
- * - Focus restoration to previous active element on close
+ * - Module-level stack of open modals (only topmost handles Esc and Tab trap)
+ * - Ref-counted body scroll lock (restores overflow only when last modal closes)
+ * - Focus restoration returns to the element focused when THAT modal opened
  * - Initial focus management
  *
  * @param {boolean} isOpen
@@ -23,52 +57,56 @@ export default function useModalA11y(
   const modalRef = useRef(null);
   const triggerRef = useRef(null);
 
-  // 1. Focus restoration & body scroll lock
-  useEffect(() => {
-    if (isOpen) {
-      // Save previously focused element to return focus when modal closes
-      triggerRef.current = document.activeElement;
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-      // Lock body scroll
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
+  const closeOnEscapeRef = useRef(closeOnEscape);
+  closeOnEscapeRef.current = closeOnEscape;
 
-      // Focus initial element or first focusable element inside modal
-      const focusTimer = setTimeout(() => {
-        if (initialFocusRef?.current && typeof initialFocusRef.current.focus === 'function') {
-          initialFocusRef.current.focus();
-        } else if (modalRef.current) {
-          const focusable = modalRef.current.querySelectorAll(
-            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-          );
-          if (focusable.length > 0 && typeof focusable[0].focus === 'function') {
-            focusable[0].focus();
-          } else if (typeof modalRef.current.focus === 'function') {
-            modalRef.current.focus();
-          }
-        }
-      }, 0);
-
-      return () => {
-        clearTimeout(focusTimer);
-        document.body.style.overflow = originalOverflow;
-        // Return focus to the trigger element
-        if (triggerRef.current && typeof triggerRef.current.focus === 'function') {
-          triggerRef.current.focus();
-        }
-      };
-    }
-  }, [isOpen, initialFocusRef]);
-
-  // 2. Escape key handling & Focus Trap on Tab
   useEffect(() => {
     if (!isOpen) return;
 
+    // 1. Capture the element that was focused right before this modal opened
+    triggerRef.current = typeof document !== 'undefined' ? document.activeElement : null;
+
+    // 2. Lock body scroll with ref-counting
+    lockBodyScroll();
+
+    // 3. Register this modal onto the module-level stack
+    const entry = {
+      modalRef,
+      onCloseRef,
+      closeOnEscapeRef,
+      triggerElement: triggerRef.current,
+    };
+    modalStack.push(entry);
+
+    // 4. Focus initial element or first focusable element inside modal
+    const focusTimer = setTimeout(() => {
+      if (initialFocusRef?.current && typeof initialFocusRef.current.focus === 'function') {
+        initialFocusRef.current.focus();
+      } else if (modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length > 0 && typeof focusable[0].focus === 'function') {
+          focusable[0].focus();
+        } else if (typeof modalRef.current.focus === 'function') {
+          modalRef.current.focus();
+        }
+      }
+    }, 0);
+
+    // 5. Keydown listener: only topmost modal handles Escape and Tab trap
     const handleKeyDown = (e) => {
+      const isTopmost = modalStack.length > 0 && modalStack[modalStack.length - 1] === entry;
+      if (!isTopmost) return;
+
       if (e.key === 'Escape') {
-        if (closeOnEscape && onClose) {
-          e.preventDefault();
-          onClose();
+        e.preventDefault();
+        e.stopPropagation();
+        if (closeOnEscapeRef.current && onCloseRef.current) {
+          onCloseRef.current();
         }
         return;
       }
@@ -104,11 +142,36 @@ export default function useModalA11y(
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      clearTimeout(focusTimer);
+
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('keydown', handleKeyDown);
+      }
+
+      // Remove this modal entry from stack
+      const idx = modalStack.indexOf(entry);
+      if (idx !== -1) {
+        modalStack.splice(idx, 1);
+      }
+
+      // Unlock body scroll with ref-counting
+      unlockBodyScroll();
+
+      // Return focus to the trigger element that was active when this modal opened
+      if (triggerRef.current && typeof triggerRef.current.focus === 'function') {
+        try {
+          triggerRef.current.focus();
+        } catch {
+          // In case element is no longer in DOM
+        }
+      }
     };
-  }, [isOpen, closeOnEscape, onClose]);
+  }, [isOpen]);
 
   return modalRef;
 }
