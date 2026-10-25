@@ -264,7 +264,8 @@ export default function ListingDetailModal({
 
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer"
+            aria-label="Close modal"
           >
             <X className="w-4 h-4" />
           </button>
@@ -448,7 +449,7 @@ export default function ListingDetailModal({
                 maxLength={150}
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
               />
             </div>
 
@@ -458,7 +459,7 @@ export default function ListingDetailModal({
                 <select
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value)}
-                  className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
+                  className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
                 >
                   {CATEGORIES.map((cat) => (
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -471,7 +472,7 @@ export default function ListingDetailModal({
                 <select
                   value={editType}
                   onChange={(e) => setEditType(e.target.value)}
-                  className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
+                  className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
                 >
                   <option value="RENT">RENT</option>
                   <option value="SELL">SELL</option>
@@ -490,7 +491,7 @@ export default function ListingDetailModal({
                   required
                   value={editPrice}
                   onChange={(e) => setEditPrice(e.target.value)}
-                  className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono font-semibold"
+                  className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono font-semibold"
                 />
               </div>
             )}
@@ -507,7 +508,7 @@ export default function ListingDetailModal({
                       required
                       value={editRentalRate}
                       onChange={(e) => setEditRentalRate(e.target.value)}
-                      className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono font-semibold"
+                      className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono font-semibold"
                     />
                   </div>
                   <div>
@@ -515,7 +516,7 @@ export default function ListingDetailModal({
                     <select
                       value={editRentalPeriod}
                       onChange={(e) => setEditRentalPeriod(e.target.value)}
-                      className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-medium cursor-pointer"
+                      className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-medium cursor-pointer"
                     >
                       {RENTAL_PERIODS.map((p) => (
                         <option key={p.value} value={p.value}>{p.label}</option>
@@ -531,7 +532,7 @@ export default function ListingDetailModal({
                     min="0"
                     value={editDepositAmount}
                     onChange={(e) => setEditDepositAmount(e.target.value)}
-                    className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono"
+                    className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono"
                   />
                 </div>
               </div>
@@ -545,7 +546,7 @@ export default function ListingDetailModal({
                   maxLength={500}
                   value={editSwapPreferences}
                   onChange={(e) => setEditSwapPreferences(e.target.value)}
-                  className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary"
+                  className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary"
                 />
               </div>
             )}
@@ -558,7 +559,7 @@ export default function ListingDetailModal({
                 maxLength={2000}
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary resize-none"
+                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary resize-none"
               />
             </div>
 

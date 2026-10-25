@@ -169,7 +169,8 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors"
+            className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer"
+            aria-label="Close modal"
           >
             <X className="w-4 h-4" />
           </button>
@@ -198,7 +199,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Casio fx-991CW Calculator (1st Year)"
-              className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium"
+              className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium"
             />
           </div>
 
@@ -211,7 +212,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium cursor-pointer"
+                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium cursor-pointer"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.value} value={cat.value}>
@@ -228,7 +229,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium cursor-pointer"
+                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium cursor-pointer"
               >
                 <option value="RENT">RENT (Lend for duration)</option>
                 <option value="SELL">SELL (Outright Purchase)</option>
@@ -255,7 +256,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="350.00"
-                  className="block w-full pl-7 pr-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-mono font-semibold"
+                  className="block w-full pl-7 pr-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-mono font-semibold"
                 />
               </div>
             </div>
@@ -280,7 +281,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
                       value={rentalRate}
                       onChange={(e) => setRentalRate(e.target.value)}
                       placeholder="100.00"
-                      className="block w-full pl-7 pr-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-mono font-semibold"
+                      className="block w-full pl-7 pr-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-mono font-semibold"
                     />
                   </div>
                 </div>
@@ -292,7 +293,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
                   <select
                     value={rentalPeriod}
                     onChange={(e) => setRentalPeriod(e.target.value)}
-                    className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium cursor-pointer"
+                    className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium cursor-pointer"
                   >
                     {RENTAL_PERIODS.map((p) => (
                       <option key={p.value} value={p.value}>
@@ -318,7 +319,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
                     value={depositAmount}
                     onChange={(e) => setDepositAmount(e.target.value)}
                     placeholder="400.00"
-                    className="block w-full pl-7 pr-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-mono"
+                    className="block w-full pl-7 pr-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-mono"
                   />
                 </div>
               </div>
@@ -336,7 +337,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
                 value={swapPreferences}
                 onChange={(e) => setSwapPreferences(e.target.value)}
                 placeholder="e.g. Seeking Casio fx-991ES or standard Mini-Drafter"
-                className="block w-full px-3 py-1.5 text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors"
+                className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors"
               />
             </div>
           )}
@@ -353,7 +354,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe item condition, inclusions (cases, clips, batteries), and preferred meetup spot on campus..."
-              className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors resize-none"
+              className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors resize-none"
             />
           </div>
 

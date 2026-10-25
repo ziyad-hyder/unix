@@ -435,7 +435,7 @@ export default function DashboardPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search resources..."
-                    className="block w-full pl-8 pr-3 py-1.5 text-xs border border-brand-secondary/25 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                    className="block w-full pl-8 pr-3 py-1.5 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
                   />
                 </div>
               </div>
@@ -766,7 +766,7 @@ export default function DashboardPage() {
                                     value={codeInputs[req.id] || ''}
                                     onChange={(e) => handleCodeInputChange(req.id, e.target.value)}
                                     disabled={actionLoadingId === req.id}
-                                    className="w-full sm:w-32 px-3 py-1.5 text-center font-mono text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                                    className="w-full sm:w-32 px-3 py-1.5 text-center font-mono text-base sm:text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
                                   />
                                   <button
                                     onClick={() => handleVerifyCode(req.id, 'verify-handoff', codeInputs[req.id], 'Handoff verified successfully. Lease is now active.')}
@@ -1097,7 +1097,7 @@ export default function DashboardPage() {
                                   value={codeInputs[req.id] || ''}
                                   onChange={(e) => handleCodeInputChange(req.id, e.target.value)}
                                   disabled={actionLoadingId === req.id}
-                                  className="w-full sm:w-32 px-3 py-1.5 text-center font-mono text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                                  className="w-full sm:w-32 px-3 py-1.5 text-center font-mono text-base sm:text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
                                 />
                                 <button
                                   onClick={() => handleVerifyCode(req.id, 'verify-return', codeInputs[req.id], 'Return verified successfully. Transaction completed.')}

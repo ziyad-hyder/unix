@@ -290,7 +290,7 @@ export default function LoginPage() {
                   <select
                     value={loginCampus}
                     onChange={(e) => setLoginCampus(e.target.value)}
-                    className="block w-full pl-9 pr-8 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
+                    className="block w-full pl-9 pr-8 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
                   >
                     {CAMPUSES.map((campus) => (
                       <option key={campus.id} value={campus.id}>
@@ -312,10 +312,11 @@ export default function LoginPage() {
                   <input
                     type="text"
                     required
+                    autoComplete="username"
                     value={loginRollNumber}
                     onChange={(e) => setLoginRollNumber(e.target.value.replace(/@.*$/, ''))}
                     placeholder="e.g. b24cs052"
-                    className="block w-full pl-2.5 pr-2 py-2 text-xs bg-transparent text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none font-mono"
+                    className="block w-full pl-2.5 pr-2 py-2 text-base sm:text-xs bg-transparent text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none font-mono"
                   />
                   <div className="inline-flex items-center px-2.5 bg-brand-primary/5 border-l border-brand-secondary/20 text-xs font-mono font-semibold text-ink-secondary select-none">
                     {selectedLoginCampus.domain}
@@ -334,15 +335,17 @@ export default function LoginPage() {
                   <input
                     type={showLoginPassword ? 'text' : 'password'}
                     required
+                    autoComplete="current-password"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="block w-full pl-9 pr-10 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                    className="block w-full pl-9 pr-10 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPassword(!showLoginPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink-secondary hover:text-ink-primary cursor-pointer"
+                    aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
                   >
                     {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -414,7 +417,7 @@ export default function LoginPage() {
                       <select
                         value={signUpCampus}
                         onChange={(e) => setSignUpCampus(e.target.value)}
-                        className="block w-full pl-9 pr-8 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
+                        className="block w-full pl-9 pr-8 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
                       >
                         {CAMPUSES.map((campus) => (
                           <option key={campus.id} value={campus.id}>
@@ -436,10 +439,11 @@ export default function LoginPage() {
                       <input
                         type="text"
                         required
+                        autoComplete="username"
                         value={signUpRollNumber}
                         onChange={(e) => setSignUpRollNumber(e.target.value.replace(/@.*$/, ''))}
                         placeholder="e.g. b24cs052"
-                        className="block w-full pl-2.5 pr-2 py-2 text-xs bg-transparent text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none font-mono"
+                        className="block w-full pl-2.5 pr-2 py-2 text-base sm:text-xs bg-transparent text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none font-mono"
                       />
                       <div className="inline-flex items-center px-2.5 bg-brand-primary/5 border-l border-brand-secondary/20 text-xs font-mono font-semibold text-ink-secondary select-none">
                         {selectedSignUpCampus.domain}
@@ -457,10 +461,11 @@ export default function LoginPage() {
                     <input
                       type="text"
                       required
+                      autoComplete="name"
                       value={signUpFullName}
                       onChange={(e) => setSignUpFullName(e.target.value)}
                       placeholder="e.g. Rahul Sharma"
-                      className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                      className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
                     />
                   </div>
 
@@ -504,10 +509,12 @@ export default function LoginPage() {
                         required
                         maxLength={6}
                         autoFocus
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
                         value={signUpOtp}
                         onChange={(e) => setSignUpOtp(e.target.value.replace(/\D/g, ''))}
                         placeholder="123456"
-                        className="block w-full pl-9 pr-3 py-2 text-center tracking-[0.4em] text-sm font-mono font-bold border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/30 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary"
+                        className="block w-full pl-9 pr-3 py-2 text-center tracking-[0.4em] text-base sm:text-sm font-mono font-bold border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/30 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary"
                       />
                     </div>
                   </div>
@@ -580,15 +587,17 @@ export default function LoginPage() {
                         required
                         autoFocus
                         minLength={6}
+                        autoComplete="new-password"
                         value={signUpPassword}
                         onChange={(e) => setSignUpPassword(e.target.value)}
                         placeholder="Create strong password"
-                        className="block w-full pl-9 pr-10 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                        className="block w-full pl-9 pr-10 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
                       />
                       <button
                         type="button"
                         onClick={() => setShowSignUpPassword(!showSignUpPassword)}
                         className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink-secondary hover:text-ink-primary cursor-pointer"
+                        aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
                       >
                         {showSignUpPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -604,10 +613,11 @@ export default function LoginPage() {
                       type="password"
                       required
                       minLength={6}
+                      autoComplete="new-password"
                       value={signUpConfirmPassword}
                       onChange={(e) => setSignUpConfirmPassword(e.target.value)}
                       placeholder="Re-type password"
-                      className="block w-full px-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                      className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
                     />
                   </div>
 
@@ -659,10 +669,11 @@ export default function LoginPage() {
                       <input
                         type="tel"
                         autoFocus
+                        autoComplete="tel"
                         value={signUpPhone}
                         onChange={(e) => setSignUpPhone(e.target.value)}
                         placeholder="+91 9876543210"
-                        className="block w-full pl-9 pr-3 py-2 text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-mono font-medium"
+                        className="block w-full pl-9 pr-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-mono font-medium"
                       />
                     </div>
                   </div>
