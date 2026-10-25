@@ -2,6 +2,8 @@
  * Pure helpers for Transaction State classification, badge counters, and grouping.
  */
 
+// Terminal statuses that belong strictly under History disclosure.
+// Note: Unknown or non-terminal statuses (including DISPUTED) must NEVER be hidden under History.
 export const TERMINAL_STATUSES = Object.freeze([
   'COMPLETED',
   'CANCELLED',
@@ -9,16 +11,20 @@ export const TERMINAL_STATUSES = Object.freeze([
   'EXPIRED',
 ]);
 
+// Action statuses requiring owner intervention
 export const OWNER_ACTION_STATUSES = Object.freeze([
   'PENDING',
   'ACCEPTED',
   'RETURN_PENDING',
   'OVERDUE',
+  'DISPUTED',
 ]);
 
+// Action statuses requiring borrower intervention
 export const BORROWER_ACTION_STATUSES = Object.freeze([
   'ACCEPTED',
   'OVERDUE',
+  'DISPUTED',
 ]);
 
 /**
@@ -36,7 +42,10 @@ export function needsAction(req, role) {
     return OWNER_ACTION_STATUSES.includes(req.status);
   }
   if (normalizedRole === 'borrower' || normalizedRole === 'outgoing') {
-    return BORROWER_ACTION_STATUSES.includes(req.status);
+    return (
+      BORROWER_ACTION_STATUSES.includes(req.status) ||
+      (req.status === 'RETURN_PENDING' && Boolean(req.disputed))
+    );
   }
   return false;
 }
@@ -49,6 +58,8 @@ export function needsAction(req, role) {
  * - CANCELLED: Request cancelled before completion.
  * - REJECTED: Request declined by item owner.
  * - EXPIRED: Request expired before acceptance or completion.
+ *
+ * IMPORTANT: Unknown statuses (e.g. DISPUTED, UNKNOWN) must never be hidden under History.
  *
  * @param {Object} req - The transaction object
  * @returns {boolean}
