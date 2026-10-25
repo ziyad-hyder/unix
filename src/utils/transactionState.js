@@ -3,7 +3,7 @@
  */
 
 // Terminal statuses that belong strictly under History disclosure.
-// Note: Unknown or non-terminal statuses (including DISPUTED) must NEVER be hidden under History.
+// Note: Unknown or active statuses must NEVER be hidden under History.
 export const TERMINAL_STATUSES = Object.freeze([
   'COMPLETED',
   'CANCELLED',
@@ -12,19 +12,19 @@ export const TERMINAL_STATUSES = Object.freeze([
 ]);
 
 // Action statuses requiring owner intervention
+// (RETURN_PENDING remains an action for owner even when disputed, because Confirm Return is still available)
 export const OWNER_ACTION_STATUSES = Object.freeze([
   'PENDING',
   'ACCEPTED',
   'RETURN_PENDING',
   'OVERDUE',
-  'DISPUTED',
 ]);
 
 // Action statuses requiring borrower intervention
+// (RETURN_PENDING does not count toward needs-action badge for the borrower, disputed or not)
 export const BORROWER_ACTION_STATUSES = Object.freeze([
   'ACCEPTED',
   'OVERDUE',
-  'DISPUTED',
 ]);
 
 /**
@@ -42,10 +42,7 @@ export function needsAction(req, role) {
     return OWNER_ACTION_STATUSES.includes(req.status);
   }
   if (normalizedRole === 'borrower' || normalizedRole === 'outgoing') {
-    return (
-      BORROWER_ACTION_STATUSES.includes(req.status) ||
-      (req.status === 'RETURN_PENDING' && Boolean(req.disputed))
-    );
+    return BORROWER_ACTION_STATUSES.includes(req.status);
   }
   return false;
 }
@@ -59,7 +56,7 @@ export function needsAction(req, role) {
  * - REJECTED: Request declined by item owner.
  * - EXPIRED: Request expired before acceptance or completion.
  *
- * IMPORTANT: Unknown statuses (e.g. DISPUTED, UNKNOWN) must never be hidden under History.
+ * IMPORTANT: Unknown or active statuses must never be hidden under History.
  *
  * @param {Object} req - The transaction object
  * @returns {boolean}

@@ -757,7 +757,7 @@ export default function DashboardPage() {
               <p>Return declared on: <span className="font-medium text-ink-primary">{formatDateTime(req.returnedAt)}</span></p>
             )}
             {req.disputed && (
-              <p className="text-amber-800 font-semibold">Return disputed by owner.</p>
+              <p className="text-amber-800 font-semibold">Disputed. Contact the other party to resolve.</p>
             )}
           </div>
         )}
@@ -957,7 +957,7 @@ export default function DashboardPage() {
               {req.disputed ? (
                 <span className="text-amber-800 font-semibold flex items-center gap-1 text-xs">
                   <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  <span>Return disputed by you. Auto-completion suspended.</span>
+                  <span>Disputed. Contact the other party to resolve.</span>
                 </span>
               ) : (
                 <span className="text-emerald-800 font-semibold flex items-center gap-1 text-xs">
@@ -1096,7 +1096,7 @@ export default function DashboardPage() {
               <p>Return declared on: <span className="font-medium text-ink-primary">{formatDateTime(req.returnedAt)}</span></p>
             )}
             {req.disputed && (
-              <p className="text-amber-800 font-semibold">Owner disputed the return. Please reach out to resolve.</p>
+              <p className="text-amber-800 font-semibold">Disputed. Contact the other party to resolve.</p>
             )}
           </div>
         )}
@@ -1299,7 +1299,7 @@ export default function DashboardPage() {
             {req.disputed ? (
               <span className="text-amber-800 font-semibold flex items-center gap-1 text-xs">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                <span>Owner reported an issue with the return. Contact them to resolve.</span>
+                <span>Disputed. Contact the other party to resolve.</span>
               </span>
             ) : (
               <span className="text-emerald-800 font-semibold flex items-center gap-1 text-xs">

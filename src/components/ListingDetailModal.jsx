@@ -617,7 +617,7 @@ export default function ListingDetailModal({
     <ConfirmDialog
       open={showDeleteConfirm}
       title="Delete this listing?"
-      message="This listing will be closed and removed from the active marketplace. Any pending requests will be automatically declined. Listings with an active lease cannot be deleted."
+      message="This listing will be closed and removed from the active marketplace. Any pending requests will be automatically declined. Listings with an accepted or ongoing request cannot be deleted."
       confirmLabel="Delete Listing"
       cancelLabel="Cancel"
       danger={true}

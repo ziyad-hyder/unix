@@ -10,11 +10,16 @@ import {
 
 describe('transactionState.js test suite', () => {
   describe('needsAction', () => {
-    test('returns true for owner on PENDING, ACCEPTED, RETURN_PENDING, OVERDUE, DISPUTED', () => {
+    test('returns true for owner on PENDING, ACCEPTED, RETURN_PENDING, OVERDUE', () => {
       OWNER_ACTION_STATUSES.forEach((status) => {
         assert.strictEqual(needsAction({ status }, 'owner'), true);
         assert.strictEqual(needsAction({ status }, 'incoming'), true);
       });
+    });
+
+    test('returns true for owner on RETURN_PENDING even when disputed (Confirm Return button still available)', () => {
+      assert.strictEqual(needsAction({ status: 'RETURN_PENDING', disputed: true }, 'owner'), true);
+      assert.strictEqual(needsAction({ status: 'RETURN_PENDING', disputed: true }, 'incoming'), true);
     });
 
     test('returns false for owner on ACTIVE_LEASE and terminal statuses', () => {
@@ -24,31 +29,35 @@ describe('transactionState.js test suite', () => {
       });
     });
 
-    test('returns true for borrower on ACCEPTED, OVERDUE, and DISPUTED', () => {
+    test('returns true for borrower on ACCEPTED and OVERDUE', () => {
       BORROWER_ACTION_STATUSES.forEach((status) => {
         assert.strictEqual(needsAction({ status }, 'borrower'), true);
         assert.strictEqual(needsAction({ status }, 'outgoing'), true);
       });
     });
 
-    test('returns true for borrower when return is disputed by owner (RETURN_PENDING + disputed=true)', () => {
-      assert.strictEqual(needsAction({ status: 'RETURN_PENDING', disputed: true }, 'borrower'), true);
-      assert.strictEqual(needsAction({ status: 'RETURN_PENDING', disputed: true }, 'outgoing'), true);
+    test('returns false for borrower on RETURN_PENDING even when disputed (no action buttons offered)', () => {
+      assert.strictEqual(needsAction({ status: 'RETURN_PENDING', disputed: true }, 'borrower'), false);
+      assert.strictEqual(needsAction({ status: 'RETURN_PENDING', disputed: true }, 'outgoing'), false);
+      assert.strictEqual(needsAction({ status: 'RETURN_PENDING', disputed: false }, 'borrower'), false);
+      assert.strictEqual(needsAction({ status: 'RETURN_PENDING', disputed: false }, 'outgoing'), false);
     });
 
-    test('returns false for borrower on undisputed RETURN_PENDING, PENDING, ACTIVE_LEASE, and terminal statuses', () => {
-      ['PENDING', 'ACTIVE_LEASE', 'RETURN_PENDING', 'COMPLETED', 'CANCELLED', 'REJECTED', 'EXPIRED'].forEach((status) => {
-        assert.strictEqual(needsAction({ status, disputed: false }, 'borrower'), false);
-        assert.strictEqual(needsAction({ status, disputed: false }, 'outgoing'), false);
+    test('returns false for borrower on PENDING, ACTIVE_LEASE, and terminal statuses', () => {
+      ['PENDING', 'ACTIVE_LEASE', 'COMPLETED', 'CANCELLED', 'REJECTED', 'EXPIRED'].forEach((status) => {
+        assert.strictEqual(needsAction({ status }, 'borrower'), false);
+        assert.strictEqual(needsAction({ status }, 'outgoing'), false);
       });
     });
 
-    test('handles null, undefined, and malformed inputs safely without throwing', () => {
+    test('handles null, undefined, dead status strings, and malformed inputs safely without throwing', () => {
       assert.strictEqual(needsAction(null, 'owner'), false);
       assert.strictEqual(needsAction({}, 'owner'), false);
       assert.strictEqual(needsAction({ status: 'PENDING' }, null), false);
       assert.strictEqual(needsAction(undefined, undefined), false);
       assert.strictEqual(needsAction({ status: 'UNKNOWN' }, 'owner'), false);
+      assert.strictEqual(needsAction({ status: 'DISPUTED' }, 'owner'), false);
+      assert.strictEqual(needsAction({ status: 'DISPUTED' }, 'borrower'), false);
     });
   });
 
@@ -60,13 +69,13 @@ describe('transactionState.js test suite', () => {
     });
 
     test('returns false for active or pending statuses', () => {
-      ['PENDING', 'ACCEPTED', 'ACTIVE_LEASE', 'OVERDUE', 'RETURN_PENDING', 'DISPUTED'].forEach((status) => {
+      ['PENDING', 'ACCEPTED', 'ACTIVE_LEASE', 'OVERDUE', 'RETURN_PENDING'].forEach((status) => {
         assert.strictEqual(isHistory({ status }), false);
       });
     });
 
     test('unknown statuses must NEVER be hidden under History', () => {
-      ['UNKNOWN', 'UNKNOWN_STATUS', 'CUSTOM_STATE', 'UNDER_REVIEW', 'ARBITRATION'].forEach((status) => {
+      ['UNKNOWN', 'UNKNOWN_STATUS', 'CUSTOM_STATE', 'UNDER_REVIEW', 'ARBITRATION', 'DISPUTED'].forEach((status) => {
         assert.strictEqual(isHistory({ status }), false, `Unknown status '${status}' must not be hidden in History`);
       });
     });
