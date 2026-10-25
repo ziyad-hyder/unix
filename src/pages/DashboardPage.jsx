@@ -144,6 +144,7 @@ export default function DashboardPage() {
   // Marketplace State
   const [listings, setListings] = useState([]);
   const [listingsLoading, setListingsLoading] = useState(true);
+  const [listingsError, setListingsError] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedListingId, setSelectedListingId] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -177,6 +178,7 @@ export default function DashboardPage() {
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [outgoingRequests, setOutgoingRequests] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [transactionsError, setTransactionsError] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
   const [codeInputs, setCodeInputs] = useState({});
@@ -192,6 +194,7 @@ export default function DashboardPage() {
   const fetchListings = useCallback(async () => {
     try {
       setListingsLoading(true);
+      setListingsError(null);
       const params = { status: 'ACTIVE' };
       if (selectedCategory !== 'ALL') params.category = selectedCategory;
       if (selectedType !== 'ALL') params.type = selectedType;
@@ -202,6 +205,7 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error('Failed to fetch listings:', err);
+      setListingsError(getFriendlyErrorMessage(err, "Can't reach the server. Check your connection and try again."));
     } finally {
       setListingsLoading(false);
     }
@@ -211,6 +215,7 @@ export default function DashboardPage() {
   const fetchTransactions = useCallback(async () => {
     try {
       setTransactionsLoading(true);
+      setTransactionsError(null);
       const res = await api.get('/api/transactions/me');
       if (res.data?.success && res.data?.data) {
         setIncomingRequests(res.data.data.receivedRequests || []);
@@ -218,6 +223,7 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error('Failed to fetch transactions:', err);
+      setTransactionsError(getFriendlyErrorMessage(err, "Can't reach the server. Check your connection and try again."));
     } finally {
       setTransactionsLoading(false);
     }
@@ -455,8 +461,25 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Listings Grid */}
-            {listingsLoading ? (
+            {/* Small error line when data was already loaded and a refresh failed */}
+            {listingsError && listings.length > 0 && (
+              <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{listingsError}</span>
+                </div>
+                <button
+                  onClick={fetchListings}
+                  className="inline-flex items-center gap-1 font-semibold text-brand-primary hover:underline cursor-pointer ml-3 shrink-0"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Retry</span>
+                </button>
+              </div>
+            )}
+
+            {/* Listings Grid / Error / Empty / Skeleton */}
+            {listingsLoading && listings.length === 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((n) => (
                   <div key={n} className="bg-white rounded-xl border border-brand-secondary/20 p-5 animate-pulse space-y-3">
@@ -472,6 +495,23 @@ export default function DashboardPage() {
                     <div className="w-1/3 h-5 bg-brand-primary/10 rounded pt-2" />
                   </div>
                 ))}
+              </div>
+            ) : listingsError && listings.length === 0 ? (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-8 sm:p-10 text-center">
+                <div className="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-3">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-red-900">Unable to load listings</h3>
+                <p className="text-xs text-red-700 max-w-sm mx-auto mt-1 mb-4">
+                  {listingsError}
+                </p>
+                <button
+                  onClick={fetchListings}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary transition-colors cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Retry</span>
+                </button>
               </div>
             ) : filteredListings.length === 0 ? (
               <div className="bg-white rounded-2xl border border-dashed border-brand-secondary/30 p-10 sm:p-14 text-center">
@@ -538,33 +578,72 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Section 1: Incoming Requests (Owner View) */}
-            <div>
-              <div className="flex items-center justify-between mb-3 gap-2">
-                <div>
-                  <h2 className="text-base font-bold text-ink-primary">
-                    Incoming Requests <span className="text-ink-secondary/70 font-normal">({incomingRequests.length})</span>
-                  </h2>
-                  <p className="text-xs text-ink-secondary">
-                    Students requesting to buy, rent, or swap your listed items.
-                  </p>
+            {/* Small error line when transactions already loaded and a refresh failed */}
+            {transactionsError && (incomingRequests.length > 0 || outgoingRequests.length > 0) && (
+              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{transactionsError}</span>
                 </div>
                 <button
                   onClick={fetchTransactions}
-                  className="inline-flex items-center gap-1.5 text-xs text-brand-secondary hover:text-brand-primary font-semibold cursor-pointer shrink-0"
+                  className="inline-flex items-center gap-1 font-semibold text-brand-primary hover:underline cursor-pointer ml-3 shrink-0"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Refresh</span>
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Retry</span>
                 </button>
               </div>
+            )}
 
-              {transactionsLoading ? (
-                <div className="p-8 text-center text-xs text-ink-secondary">Loading requests...</div>
-              ) : incomingRequests.length === 0 ? (
-                <div className="bg-white rounded-xl border border-brand-secondary/20 p-7 text-center">
-                  <p className="text-xs font-medium text-ink-secondary">No incoming requests yet for your listings.</p>
+            {transactionsError && incomingRequests.length === 0 && outgoingRequests.length === 0 ? (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-8 sm:p-10 text-center">
+                <div className="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-3">
+                  <AlertCircle className="w-5 h-5" />
                 </div>
-              ) : (
+                <h3 className="text-sm font-bold text-red-900">Unable to load requests</h3>
+                <p className="text-xs text-red-700 max-w-sm mx-auto mt-1 mb-4">
+                  {transactionsError}
+                </p>
+                <button
+                  onClick={fetchTransactions}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary transition-colors cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Retry</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Section 1: Incoming Requests (Owner View) */}
+                <div>
+                  <div className="flex items-center justify-between mb-3 gap-2">
+                    <div>
+                      <h2 className="text-base font-bold text-ink-primary">
+                        Incoming Requests <span className="text-ink-secondary/70 font-normal">({incomingRequests.length})</span>
+                      </h2>
+                      <p className="text-xs text-ink-secondary">
+                        Students requesting to buy, rent, or swap your listed items.
+                      </p>
+                    </div>
+                    <button
+                      onClick={fetchTransactions}
+                      disabled={transactionsLoading}
+                      className="inline-flex items-center gap-1.5 text-xs text-brand-secondary hover:text-brand-primary font-semibold cursor-pointer shrink-0 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${transactionsLoading ? 'animate-spin' : ''}`} />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+
+                  {transactionsLoading && incomingRequests.length === 0 && outgoingRequests.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-ink-secondary">Loading requests...</div>
+                  ) : incomingRequests.length === 0 ? (
+                    !transactionsError ? (
+                      <div className="bg-white rounded-xl border border-brand-secondary/20 p-7 text-center">
+                        <p className="text-xs font-medium text-ink-secondary">No incoming requests yet for your listings.</p>
+                      </div>
+                    ) : null
+                  ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {incomingRequests.map((req) => (
                     <div
@@ -841,10 +920,14 @@ export default function DashboardPage() {
                 Track requests you have made for other students' items.
               </p>
 
-              {outgoingRequests.length === 0 ? (
-                <div className="bg-white rounded-xl border border-brand-secondary/20 p-7 text-center">
-                  <p className="text-xs font-medium text-ink-secondary">You have not requested any items yet.</p>
-                </div>
+              {transactionsLoading && incomingRequests.length === 0 && outgoingRequests.length === 0 ? (
+                <div className="p-8 text-center text-xs text-ink-secondary">Loading requests...</div>
+              ) : outgoingRequests.length === 0 ? (
+                !transactionsError ? (
+                  <div className="bg-white rounded-xl border border-brand-secondary/20 p-7 text-center">
+                    <p className="text-xs font-medium text-ink-secondary">You have not requested any items yet.</p>
+                  </div>
+                ) : null
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {outgoingRequests.map((req) => (
@@ -1094,9 +1177,11 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
-
-          </div>
+          </>
         )}
+
+      </div>
+    )}
 
       </main>
 

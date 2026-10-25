@@ -19,6 +19,7 @@ export const ERROR_CODE_MAP = {
 };
 
 export const HTTP_STATUS_MAP = {
+  0: "Can't reach the server. Check your connection and try again.",
   400: 'Invalid request. Please check the details and try again.',
   401: 'Please log in to continue.',
   403: 'You do not have permission to perform this action.',
@@ -44,7 +45,10 @@ export function getFriendlyErrorMessage(err, fallbackMessage = 'An unexpected er
     console.error('[API Error Detail]:', err);
   }
 
-  if (!err) return fallbackMessage;
+  const status = err.status !== undefined ? err.status : err.response?.status;
+  if (status === 0) {
+    return HTTP_STATUS_MAP[0];
+  }
 
   const errorCode = err.errorCode || err.response?.data?.errorCode;
 
@@ -94,8 +98,7 @@ export function getFriendlyErrorMessage(err, fallbackMessage = 'An unexpected er
   }
 
   // 4. Fallback to HTTP status mapping
-  const status = err.status || err.response?.status;
-  if (status && HTTP_STATUS_MAP[status]) {
+  if (status != null && HTTP_STATUS_MAP[status]) {
     return HTTP_STATUS_MAP[status];
   }
 

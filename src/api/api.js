@@ -8,6 +8,7 @@ const apiBaseUrl =
 // Create base Axios instance
 const api = axios.create({
   baseURL: apiBaseUrl,
+  timeout: 15000,
   withCredentials: true, // Crucial: Always send/receive httpOnly JWT cookies cross-origin
   headers: {
     'Content-Type': 'application/json',
@@ -43,6 +44,18 @@ api.interceptors.response.use(
 
     if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
       console.error('[API Response Error]:', error);
+    }
+
+    // For responses with no error.response (ERR_NETWORK, ECONNABORTED, timeout)
+    if (!error.response) {
+      const customError = {
+        status: 0,
+        message: "Can't reach the server. Check your connection and try again.",
+        errorCode: error.code || null,
+        validationErrors: null,
+        raw: error,
+      };
+      return Promise.reject(customError);
     }
 
     const rawMessage =
