@@ -5,24 +5,27 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import InstallBanner from './components/InstallBanner';
+import ErrorBoundary from './components/ErrorBoundary';
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <InstallBanner />
-        <Routes>
-          {/* Public Auth View */}
-          <Route path="/login" element={<LoginPage />} />
+        <ErrorBoundary>
+          <Routes>
+            {/* Public Auth View */}
+            <Route path="/login" element={<LoginPage />} />
 
-          {/* Protected Views */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<DashboardPage />} />
-          </Route>
+            {/* Protected Views */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<DashboardPage />} />
+            </Route>
 
-          {/* Catch-all redirect */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Catch-all redirect */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );
