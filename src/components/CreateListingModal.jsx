@@ -271,9 +271,9 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
                 onChange={(e) => setType(e.target.value)}
                 className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium cursor-pointer"
               >
-                <option value="RENT">RENT (Lend for duration)</option>
-                <option value="SELL">SELL (Outright Purchase)</option>
-                <option value="SWAP">SWAP (Item Exchange)</option>
+                <option value="RENT">Rent (Lend for duration)</option>
+                <option value="SELL">Buy (Outright Purchase)</option>
+                <option value="SWAP">Swap (Item Exchange)</option>
               </select>
             </div>
           </div>

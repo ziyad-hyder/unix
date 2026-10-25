@@ -10,6 +10,7 @@ import {
 import { getFriendlyErrorMessage } from '../utils/errors';
 import { formatDateTime, formatDuration } from '../utils/time';
 import { AUTO_START_HOURS, FREEZE_AFTER_OVERDUE_HOURS } from '../utils/policy';
+import { categoryLabel, typeLabel, typeActionLabel, rentalPeriodLabel, formatPrice } from '../utils/labels';
 
 const CATEGORIES = [
   { value: 'CALCULATOR', label: 'Scientific Calculator (fx-991CW / ES)' },
@@ -89,26 +90,26 @@ export default function ListingDetailModal({
 
   const typeConfig = {
     SELL: { 
-      label: 'SELL', 
-      ctaText: 'Request to Buy', 
+      label: typeLabel('SELL'), 
+      ctaText: typeActionLabel('SELL'), 
       badgeBg: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20', 
       dot: 'bg-brand-primary' 
     },
     RENT: { 
-      label: 'RENT', 
-      ctaText: 'Request to Rent', 
+      label: typeLabel('RENT'), 
+      ctaText: typeActionLabel('RENT'), 
       badgeBg: 'bg-brand-secondary/15 text-brand-primary border-brand-secondary/30', 
       dot: 'bg-brand-secondary' 
     },
     SWAP: { 
-      label: 'SWAP', 
-      ctaText: 'Request to Swap', 
+      label: typeLabel('SWAP'), 
+      ctaText: typeActionLabel('SWAP'), 
       badgeBg: 'bg-brand-accent/25 text-brand-primary border-brand-accent/45', 
       dot: 'bg-brand-accent' 
     },
   }[listing.type] || { 
-    label: listing.type, 
-    ctaText: 'Request Item', 
+    label: typeLabel(listing.type), 
+    ctaText: typeActionLabel(listing.type), 
     badgeBg: 'bg-brand-primary/5 text-ink-primary border-brand-secondary/20', 
     dot: 'bg-brand-secondary' 
   };
@@ -260,7 +261,7 @@ export default function ListingDetailModal({
                   {typeConfig.label}
                 </span>
                 <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded">
-                  {listing.category}
+                  {categoryLabel(listing.category)}
                 </span>
               </>
             ) : (
@@ -341,7 +342,7 @@ export default function ListingDetailModal({
               {listing.type === 'SELL' && (
                 <div className="flex items-baseline gap-2">
                   <span className="text-xl font-bold text-ink-primary">
-                    ₹{listing.price != null ? Number(listing.price).toLocaleString('en-IN') : '0'}
+                    {formatPrice(listing.price)}
                   </span>
                   <span className="text-xs text-ink-secondary font-medium">One-time purchase</span>
                 </div>
@@ -350,11 +351,13 @@ export default function ListingDetailModal({
                 <div className="space-y-1">
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-xl font-bold text-ink-primary">
-                      ₹{listing.rentalRate != null ? Number(listing.rentalRate).toLocaleString('en-IN') : '0'}
+                      {formatPrice(listing.rentalRate)}
                     </span>
-                    <span className="text-xs text-ink-secondary font-medium">
-                      / {listing.rentalPeriod ? listing.rentalPeriod.toLowerCase() : 'period'}
-                    </span>
+                    {listing.rentalPeriod && listing.rentalRate != null && String(listing.rentalRate).trim() !== '' && (
+                      <span className="text-xs text-ink-secondary font-medium">
+                        {rentalPeriodLabel(listing.rentalPeriod)}
+                      </span>
+                    )}
                   </div>
                   {listing.depositAmount != null && Number(listing.depositAmount) > 0 && (
                     <p className="text-xs text-ink-secondary">
@@ -501,9 +504,9 @@ export default function ListingDetailModal({
                   onChange={(e) => setEditType(e.target.value)}
                   className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
                 >
-                  <option value="RENT">RENT</option>
-                  <option value="SELL">SELL</option>
-                  <option value="SWAP">SWAP</option>
+                  <option value="RENT">Rent</option>
+                  <option value="SELL">Buy</option>
+                  <option value="SWAP">Swap</option>
                 </select>
               </div>
             </div>

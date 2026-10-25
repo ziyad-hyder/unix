@@ -20,20 +20,21 @@ import { toWhatsAppUrl } from '../utils/phone';
 import { mergePage } from '../utils/pagination';
 import { AUTO_START_HOURS, AUTO_COMPLETE_HOURS } from '../utils/policy';
 import { needsAction, isHistory } from '../utils/transactionState';
+import { categoryLabel, typeLabel } from '../utils/labels';
 
 const CATEGORY_FILTERS = [
-  { id: 'ALL', label: 'All Items' },
-  { id: 'CALCULATOR', label: 'Calculators' },
-  { id: 'DRAFTING', label: 'Drafting Kits' },
-  { id: 'ELECTRONICS', label: 'Electronics' },
-  { id: 'OTHER', label: 'Other Resources' },
+  { id: 'ALL', label: categoryLabel('ALL') },
+  { id: 'CALCULATOR', label: categoryLabel('CALCULATOR') },
+  { id: 'DRAFTING', label: categoryLabel('DRAFTING') },
+  { id: 'ELECTRONICS', label: categoryLabel('ELECTRONICS') },
+  { id: 'OTHER', label: categoryLabel('OTHER') },
 ];
 
 const TYPE_FILTERS = [
-  { id: 'ALL', label: 'All Types' },
-  { id: 'RENT', label: 'Rent' },
-  { id: 'SELL', label: 'Buy/Sell' },
-  { id: 'SWAP', label: 'Swap' },
+  { id: 'ALL', label: typeLabel('ALL') },
+  { id: 'RENT', label: typeLabel('RENT') },
+  { id: 'SELL', label: typeLabel('SELL') },
+  { id: 'SWAP', label: typeLabel('SWAP') },
 ];
 
 const STATUS_CONFIG = {
@@ -706,7 +707,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded-tight mr-1.5 inline-block align-middle">
-              {req.listing?.type}
+              {typeLabel(req.listing?.type)}
             </span>
             <h3 className="font-bold text-ink-primary text-xs sm:text-sm inline align-middle leading-snug break-words">
               {req.listing?.title}
@@ -1045,7 +1046,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded-tight mr-1.5 inline-block align-middle">
-              {req.listing?.type}
+              {typeLabel(req.listing?.type)}
             </span>
             <h3 className="font-bold text-ink-primary text-xs sm:text-sm inline align-middle leading-snug break-words">
               {req.listing?.title}

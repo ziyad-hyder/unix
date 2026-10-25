@@ -1,27 +1,28 @@
 import React from 'react';
 import { RefreshCw, Clock, User as UserIcon, ArrowUpRight } from 'lucide-react';
 import { formatDateTime } from '../utils/time';
+import { categoryLabel, typeLabel, rentalPeriodLabel, formatPrice } from '../utils/labels';
 
 export default function ListingCard({ listing, onClick }) {
   const { title, description, type, category, price, rentalRate, rentalPeriod, depositAmount, swapPreferences, imageUrl, owner, createdAt } = listing;
 
   const typeConfig = {
     SELL: {
-      label: 'SELL',
+      label: typeLabel('SELL'),
       bg: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
       dot: 'bg-brand-primary',
     },
     RENT: {
-      label: 'RENT',
+      label: typeLabel('RENT'),
       bg: 'bg-brand-secondary/15 text-brand-primary border-brand-secondary/30',
       dot: 'bg-brand-secondary',
     },
     SWAP: {
-      label: 'SWAP',
+      label: typeLabel('SWAP'),
       bg: 'bg-brand-accent/25 text-brand-primary border-brand-accent/45',
       dot: 'bg-brand-accent',
     },
-  }[type] || { label: type, bg: 'bg-brand-primary/5 text-ink-primary border-brand-secondary/20', dot: 'bg-brand-secondary' };
+  }[type] || { label: typeLabel(type), bg: 'bg-brand-primary/5 text-ink-primary border-brand-secondary/20', dot: 'bg-brand-secondary' };
 
   return (
     <div
@@ -57,7 +58,7 @@ export default function ListingCard({ listing, onClick }) {
           </span>
           <div className="flex items-center gap-1">
             <span className="text-[10px] font-semibold text-ink-secondary uppercase tracking-wider bg-brand-primary/5 px-2 py-0.5 rounded">
-              {category}
+              {categoryLabel(category)}
             </span>
             <ArrowUpRight className="w-3.5 h-3.5 text-brand-secondary/40 group-hover:text-brand-primary transition-colors" />
           </div>
@@ -79,20 +80,22 @@ export default function ListingCard({ listing, onClick }) {
             <div className="flex items-baseline gap-1">
               <span className="text-xs text-ink-secondary font-medium">Price:</span>
               <span className="text-base font-bold text-ink-primary">
-                ₹{price != null ? Number(price).toLocaleString('en-IN') : '0'}
+                {formatPrice(price)}
               </span>
             </div>
           )}
 
           {type === 'RENT' && (
             <div>
-              <div className="flex items-baseline gap-1">
+              <div className="flex items-baseline gap-1.5">
                 <span className="text-base font-bold text-ink-primary">
-                  ₹{rentalRate != null ? Number(rentalRate).toLocaleString('en-IN') : '0'}
+                  {formatPrice(rentalRate)}
                 </span>
-                <span className="text-xs text-ink-secondary font-medium">
-                  / {rentalPeriod ? rentalPeriod.toLowerCase() : 'period'}
-                </span>
+                {rentalPeriod && rentalRate != null && String(rentalRate).trim() !== '' && (
+                  <span className="text-xs text-ink-secondary font-medium">
+                    {rentalPeriodLabel(rentalPeriod)}
+                  </span>
+                )}
               </div>
               {depositAmount != null && Number(depositAmount) > 0 && (
                 <p className="text-[11px] text-ink-secondary mt-0.5 truncate">
