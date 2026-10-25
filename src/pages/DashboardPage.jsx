@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import Navbar from '../components/Navbar';
@@ -158,8 +159,22 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const now = useMinuteTicker();
 
-  // Active Tab: 'MARKETPLACE' | 'TRANSACTIONS'
-  const [activeTab, setActiveTab] = useState('MARKETPLACE');
+  // Active Tab: synced with ?tab=transactions|marketplace (default marketplace)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = (searchParams.get('tab') || '').toLowerCase();
+  const activeTab = tabParam === 'transactions' ? 'TRANSACTIONS' : 'MARKETPLACE';
+
+  const handleTabChange = useCallback((newTab) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newTab.toLowerCase() === 'transactions') {
+        next.set('tab', 'transactions');
+      } else {
+        next.set('tab', 'marketplace');
+      }
+      return next;
+    });
+  }, [setSearchParams]);
 
   // Marketplace State
   const [listings, setListings] = useState([]);
@@ -1374,7 +1389,7 @@ export default function DashboardPage() {
         {/* Global Navigation Tabs: Marketplace vs My Transactions */}
         <div className="mt-4 sm:mt-6 flex items-center gap-2 border-b border-brand-secondary/20 pb-3 overflow-x-auto scrollbar-none">
           <button
-            onClick={() => setActiveTab('MARKETPLACE')}
+            onClick={() => handleTabChange('MARKETPLACE')}
             className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
               activeTab === 'MARKETPLACE'
                 ? 'bg-brand-primary text-white'
@@ -1387,7 +1402,7 @@ export default function DashboardPage() {
 
           <button
             onClick={() => {
-              setActiveTab('TRANSACTIONS');
+              handleTabChange('TRANSACTIONS');
               fetchTransactions();
             }}
             className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer ${

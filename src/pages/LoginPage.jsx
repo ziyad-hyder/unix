@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   School, User, Lock, KeyRound, ArrowRight, CheckCircle,
@@ -17,6 +17,15 @@ const CAMPUSES = [
 export default function LoginPage() {
   const { isAuthenticated, login, registerRequestOtp, registerVerifyOtp, registerConfirm, updateUserPhone } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const fromState = location.state?.from;
+  const from = fromState
+    ? (typeof fromState === 'string'
+        ? fromState
+        : `${fromState.pathname || '/'}${fromState.search || ''}${fromState.hash || ''}`)
+    : '/';
+  const targetDestination = from && from !== '/login' ? from : '/';
 
   // Mode: 'SIGN_IN' | 'SIGN_UP'
   const [authMode, setAuthMode] = useState('SIGN_IN');
@@ -63,9 +72,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated && signUpStep !== 4) {
-      navigate('/', { replace: true });
+      navigate(targetDestination, { replace: true });
     }
-  }, [isAuthenticated, signUpStep, navigate]);
+  }, [isAuthenticated, signUpStep, navigate, targetDestination]);
 
   useEffect(() => {
     if (loginCooldown <= 0) return;
@@ -236,7 +245,7 @@ export default function LoginPage() {
     try {
       setLoading(true);
       await updateUserPhone(normalizedPhone);
-      navigate('/', { replace: true });
+      navigate(targetDestination, { replace: true });
     } catch (err) {
       setErrorMessage(getFriendlyErrorMessage(err, 'Failed to update phone number.'));
     } finally {
@@ -245,7 +254,7 @@ export default function LoginPage() {
   };
 
   const handleSkipPhone = () => {
-    navigate('/', { replace: true });
+    navigate(targetDestination, { replace: true });
   };
 
   return (
