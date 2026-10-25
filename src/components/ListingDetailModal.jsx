@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import useModalA11y from '../hooks/useModalA11y';
+import ConfirmDialog from './ConfirmDialog';
 import { 
   X, CheckCircle2, AlertCircle, RefreshCw, Send, User, 
   Edit3, Trash2, ArrowLeft, Save, AlertTriangle, Clock 
@@ -34,8 +35,9 @@ export default function ListingDetailModal({
 }) {
   const { user } = useAuth();
 
-  // Mode: 'VIEW' | 'EDIT' | 'DELETE_CONFIRM'
+  // Mode: 'VIEW' | 'EDIT'
   const [mode, setMode] = useState('VIEW');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -60,6 +62,7 @@ export default function ListingDetailModal({
   useEffect(() => {
     if (isOpen) {
       setMode('VIEW');
+      setShowDeleteConfirm(false);
       setErrorMessage('');
       setSuccessMessage('');
       setRequestSent(isAlreadyRequested);
@@ -215,9 +218,11 @@ export default function ListingDetailModal({
     try {
       setLoading(true);
       await api.delete(`/api/listings/${listing.id}`);
+      setShowDeleteConfirm(false);
       onListingUpdated?.();
       onClose();
     } catch (err) {
+      setShowDeleteConfirm(false);
       setErrorMessage(getFriendlyErrorMessage(err, 'Failed to delete listing.'));
       setLoading(false);
     }
@@ -232,10 +237,11 @@ export default function ListingDetailModal({
   };
 
   return (
-    <div
-      onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 overflow-y-auto bg-brand-primary/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
-    >
+    <>
+      <div
+        onClick={handleBackdropClick}
+        className="fixed inset-0 z-50 overflow-y-auto bg-brand-primary/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+      >
       <div
         ref={modalRef}
         role="dialog"
@@ -257,7 +263,7 @@ export default function ListingDetailModal({
                   {listing.category}
                 </span>
               </>
-            ) : mode === 'EDIT' ? (
+            ) : (
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -268,11 +274,6 @@ export default function ListingDetailModal({
                 </button>
                 <h3 id="listing-detail-title" className="text-sm font-bold text-ink-primary">Edit Listing</h3>
               </div>
-            ) : (
-              <h3 id="listing-detail-title" className="text-sm font-bold text-red-600 flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4" />
-                <span>Confirm Deletion</span>
-              </h3>
             )}
           </div>
 
@@ -402,7 +403,7 @@ export default function ListingDetailModal({
                       <span>Edit Listing</span>
                     </button>
                     <button
-                      onClick={() => setMode('DELETE_CONFIRM')}
+                      onClick={() => setShowDeleteConfirm(true)}
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-red-600 bg-white hover:bg-red-50 border border-red-200 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-red-600" />
@@ -609,38 +610,22 @@ export default function ListingDetailModal({
           </form>
         )}
 
-        {/* 3. DELETE CONFIRMATION MODE */}
-        {mode === 'DELETE_CONFIRM' && (
-          <div className="p-6 space-y-4">
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs leading-relaxed">
-              <p className="font-bold text-xs mb-1 text-red-900">Are you sure you want to delete this listing?</p>
-              This item will be permanently removed from the active campus marketplace.
-            </div>
-
-            <div className="pt-2 flex items-center justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setMode('VIEW')}
-                disabled={loading}
-                className="px-3.5 py-2 text-xs font-semibold text-ink-secondary hover:bg-brand-primary/5 rounded-lg transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteListing}
-                disabled={loading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition-colors cursor-pointer"
-              >
-                {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                <span>Yes, Delete Listing</span>
-              </button>
-            </div>
-          </div>
-        )}
-
       </div>
     </div>
+
+    {/* Delete Listing Confirmation Dialog */}
+    <ConfirmDialog
+      open={showDeleteConfirm}
+      title="Delete this listing?"
+      message="This listing will be closed and removed from the active marketplace. Any pending requests will be automatically declined. Listings with an active lease cannot be deleted."
+      confirmLabel="Delete Listing"
+      cancelLabel="Cancel"
+      danger={true}
+      loading={loading}
+      onConfirm={handleDeleteListing}
+      onCancel={() => setShowDeleteConfirm(false)}
+    />
+  </>
   );
 }
 
