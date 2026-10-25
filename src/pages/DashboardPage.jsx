@@ -189,10 +189,53 @@ export default function DashboardPage() {
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [transactionsError, setTransactionsError] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
-  const [actionMessage, setActionMessage] = useState(null);
+  const [cardFeedback, setCardFeedback] = useState({});
+  const feedbackTimersRef = useRef({});
   const [codeInputs, setCodeInputs] = useState({});
   const [confirmState, setConfirmState] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const clearCardFeedback = useCallback((reqId) => {
+    if (feedbackTimersRef.current[reqId]) {
+      clearTimeout(feedbackTimersRef.current[reqId]);
+      delete feedbackTimersRef.current[reqId];
+    }
+    setCardFeedback((prev) => {
+      if (!prev[reqId]) return prev;
+      const next = { ...prev };
+      delete next[reqId];
+      return next;
+    });
+  }, []);
+
+  const setCardFeedbackHelper = useCallback((reqId, feedback) => {
+    if (feedbackTimersRef.current[reqId]) {
+      clearTimeout(feedbackTimersRef.current[reqId]);
+      delete feedbackTimersRef.current[reqId];
+    }
+
+    setCardFeedback((prev) => ({
+      ...prev,
+      [reqId]: feedback,
+    }));
+
+    if (feedback?.type === 'success') {
+      feedbackTimersRef.current[reqId] = setTimeout(() => {
+        setCardFeedback((prev) => {
+          const next = { ...prev };
+          delete next[reqId];
+          return next;
+        });
+        delete feedbackTimersRef.current[reqId];
+      }, 6000);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      Object.values(feedbackTimersRef.current).forEach(clearTimeout);
+    };
+  }, []);
 
   useEffect(() => {
     setConfirmState(null);
@@ -375,11 +418,11 @@ export default function DashboardPage() {
   // 3. Handle Status Update (Accept / Reject)
   const handleUpdateStatus = async (transactionId, newStatus) => {
     setActionLoadingId(transactionId);
-    setActionMessage(null);
+    clearCardFeedback(transactionId);
 
     try {
       await api.patch(`/api/transactions/${transactionId}/status`, { status: newStatus });
-      setActionMessage({
+      setCardFeedbackHelper(transactionId, {
         type: 'success',
         text: newStatus === 'ACCEPTED' ? 'Request accepted. Listing is now reserved.' : 'Request rejected.',
       });
@@ -389,7 +432,7 @@ export default function DashboardPage() {
       const isPhoneRequired =
         err.errorCode?.includes('PHONE_REQUIRED') ||
         (err.message && err.message.toLowerCase().includes('phone number is required'));
-      setActionMessage({
+      setCardFeedbackHelper(transactionId, {
         type: 'error',
         text: getFriendlyErrorMessage(err, 'Failed to update request status.'),
         isPhoneRequired,
@@ -402,18 +445,18 @@ export default function DashboardPage() {
   // 4. Handle Action Endpoints (cancel, handoff, confirm-receipt, return, confirm-return, dispute, complete)
   const handleAction = async (transactionId, action, successText) => {
     setActionLoadingId(transactionId);
-    setActionMessage(null);
+    clearCardFeedback(transactionId);
 
     try {
       await api.post(`/api/transactions/${transactionId}/${action}`);
-      setActionMessage({
+      setCardFeedbackHelper(transactionId, {
         type: 'success',
         text: successText,
       });
       fetchTransactions();
       fetchListings();
     } catch (err) {
-      setActionMessage({
+      setCardFeedbackHelper(transactionId, {
         type: 'error',
         text: getFriendlyErrorMessage(err, `Failed to perform ${action}.`),
       });
@@ -425,19 +468,20 @@ export default function DashboardPage() {
   // 5. Handle Code Verification (verify-handoff, verify-return)
   const handleVerifyCode = async (transactionId, endpoint, code, successText) => {
     if (!code || code.length !== 6) {
-      setActionMessage({
+      setCardFeedbackHelper(transactionId, {
         type: 'error',
         text: 'Please enter a valid 6-digit verification code.',
+        isCodeError: true,
       });
       return;
     }
 
     setActionLoadingId(transactionId);
-    setActionMessage(null);
+    clearCardFeedback(transactionId);
 
     try {
       await api.post(`/api/transactions/${transactionId}/${endpoint}`, { code });
-      setActionMessage({
+      setCardFeedbackHelper(transactionId, {
         type: 'success',
         text: successText,
       });
@@ -449,9 +493,10 @@ export default function DashboardPage() {
       fetchTransactions();
       fetchListings();
     } catch (err) {
-      setActionMessage({
+      setCardFeedbackHelper(transactionId, {
         type: 'error',
         text: getFriendlyErrorMessage(err, 'Failed to verify code. Please try again.'),
+        isCodeError: true,
       });
     } finally {
       setActionLoadingId(null);
@@ -889,41 +934,6 @@ export default function DashboardPage() {
         {/* ========================================================================= */}
         {activeTab === 'TRANSACTIONS' && (
           <div className="mt-6 space-y-7">
-            
-            {/* Status Alert Banner */}
-            {actionMessage && (
-              <div
-                className={`p-3.5 rounded-tight border text-xs flex items-center justify-between ${
-                  actionMessage.type === 'success'
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                    : 'bg-red-50 border-red-200 text-red-800'
-                }`}
-              >
-                <div className="flex items-center gap-2 flex-wrap">
-                  {actionMessage.type === 'success' ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                  )}
-                  <span className="font-medium">{actionMessage.text}</span>
-                  {actionMessage.isPhoneRequired && (
-                    <button
-                      type="button"
-                      onClick={() => setIsProfileModalOpen(true)}
-                      className="ml-2 px-2.5 py-1 rounded bg-brand-primary text-white text-xs font-semibold hover:bg-brand-secondary transition-colors cursor-pointer"
-                    >
-                      Add WhatsApp number
-                    </button>
-                  )}
-                </div>
-                <button
-                  onClick={() => setActionMessage(null)}
-                  className="text-xs font-semibold underline opacity-70 hover:opacity-100 cursor-pointer ml-4 shrink-0"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
 
             {/* Small error line when transactions already loaded and a refresh failed */}
             {transactionsError && (incomingRequests.length > 0 || outgoingRequests.length > 0) && (
@@ -1076,6 +1086,45 @@ export default function DashboardPage() {
 
                       {/* Action Buttons & Contact Status for Listing Owner */}
                       <div className="pt-2 border-t border-brand-secondary/15">
+                        {/* Inline Card Feedback (Above Action Buttons) */}
+                        {cardFeedback[req.id] && !cardFeedback[req.id].isCodeError && (
+                          <div
+                            role={cardFeedback[req.id].type === 'error' ? 'alert' : 'status'}
+                            className={`mb-2.5 p-2.5 rounded-tight border text-xs flex items-center justify-between ${
+                              cardFeedback[req.id].type === 'success'
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                : 'bg-red-50 border-red-200 text-red-800'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {cardFeedback[req.id].type === 'success' ? (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              ) : (
+                                <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                              )}
+                              <span className="font-medium">{cardFeedback[req.id].text}</span>
+                              {cardFeedback[req.id].isPhoneRequired && (
+                                <button
+                                  type="button"
+                                  onClick={() => setIsProfileModalOpen(true)}
+                                  className="px-2 py-0.5 rounded bg-brand-primary text-white text-[11px] font-semibold hover:bg-brand-secondary transition-colors cursor-pointer"
+                                >
+                                  Add WhatsApp number
+                                </button>
+                              )}
+                            </div>
+                            {cardFeedback[req.id].type === 'error' && (
+                              <button
+                                type="button"
+                                onClick={() => clearCardFeedback(req.id)}
+                                className="text-ink-secondary hover:text-ink-primary p-0.5 cursor-pointer ml-2 shrink-0"
+                                aria-label="Dismiss error"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        )}
                         {req.status === 'PENDING' && (
                           <div className="flex items-center justify-end gap-2 flex-wrap">
                             <button
@@ -1135,6 +1184,25 @@ export default function DashboardPage() {
                                     <span>Verify Handoff</span>
                                   </button>
                                 </div>
+                                {cardFeedback[req.id] && cardFeedback[req.id].isCodeError && cardFeedback[req.id].type === 'error' && (
+                                  <div
+                                    role="alert"
+                                    className="flex items-center justify-between text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5"
+                                  >
+                                    <div className="flex items-center gap-1.5">
+                                      <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                                      <span>{cardFeedback[req.id].text}</span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => clearCardFeedback(req.id)}
+                                      className="text-ink-secondary hover:text-red-700 p-0.5 cursor-pointer ml-2 shrink-0"
+                                      aria-label="Dismiss error"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                )}
                                 <div className="pt-1 border-t border-brand-secondary/15 flex items-center justify-between flex-wrap gap-1">
                                   <span className="text-[10px] text-ink-secondary">Can't use a code?</span>
                                   <button
@@ -1364,6 +1432,45 @@ export default function DashboardPage() {
 
                       {/* Outgoing Action Buttons */}
                       <div className="pt-2 border-t border-brand-secondary/15">
+                        {/* Inline Card Feedback (Above Action Buttons) */}
+                        {cardFeedback[req.id] && !cardFeedback[req.id].isCodeError && (
+                          <div
+                            role={cardFeedback[req.id].type === 'error' ? 'alert' : 'status'}
+                            className={`mb-2.5 p-2.5 rounded-tight border text-xs flex items-center justify-between ${
+                              cardFeedback[req.id].type === 'success'
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                : 'bg-red-50 border-red-200 text-red-800'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {cardFeedback[req.id].type === 'success' ? (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              ) : (
+                                <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                              )}
+                              <span className="font-medium">{cardFeedback[req.id].text}</span>
+                              {cardFeedback[req.id].isPhoneRequired && (
+                                <button
+                                  type="button"
+                                  onClick={() => setIsProfileModalOpen(true)}
+                                  className="px-2 py-0.5 rounded bg-brand-primary text-white text-[11px] font-semibold hover:bg-brand-secondary transition-colors cursor-pointer"
+                                >
+                                  Add WhatsApp number
+                                </button>
+                              )}
+                            </div>
+                            {cardFeedback[req.id].type === 'error' && (
+                              <button
+                                type="button"
+                                onClick={() => clearCardFeedback(req.id)}
+                                className="text-ink-secondary hover:text-ink-primary p-0.5 cursor-pointer ml-2 shrink-0"
+                                aria-label="Dismiss error"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        )}
                         {req.status === 'PENDING' && (
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <span className="text-[11px] text-ink-secondary">Waiting for owner response.</span>
@@ -1465,6 +1572,25 @@ export default function DashboardPage() {
                                   <span>Verify Return</span>
                                 </button>
                               </div>
+                              {cardFeedback[req.id] && cardFeedback[req.id].isCodeError && cardFeedback[req.id].type === 'error' && (
+                                <div
+                                  role="alert"
+                                  className="flex items-center justify-between text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5"
+                                >
+                                  <div className="flex items-center gap-1.5">
+                                    <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                                    <span>{cardFeedback[req.id].text}</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => clearCardFeedback(req.id)}
+                                    className="text-ink-secondary hover:text-red-700 p-0.5 cursor-pointer ml-2 shrink-0"
+                                    aria-label="Dismiss error"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
                               <div className="pt-1 border-t border-brand-secondary/15 flex items-center justify-between flex-wrap gap-1">
                                 <span className="text-[10px] text-ink-secondary">Can't use a code?</span>
                                 <button
