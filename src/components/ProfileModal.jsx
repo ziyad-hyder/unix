@@ -12,6 +12,7 @@ import {
   sendTestPush 
 } from '../utils/push';
 import { normalizePhone } from '../utils/phone';
+import { getFriendlyErrorMessage } from '../utils/errors';
 
 export default function ProfileModal({ isOpen, onClose, onSuccess }) {
   const { user, updateUserPhone } = useAuth();
@@ -92,7 +93,7 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
       }
       await checkPush();
     } catch (err) {
-      setPushMessage({ type: 'error', text: err.message || 'Failed to update push subscription.' });
+      setPushMessage({ type: 'error', text: getFriendlyErrorMessage(err, 'Failed to update push subscription.') });
     } finally {
       setPushActionLoading(false);
     }
@@ -110,7 +111,7 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
     } catch (err) {
       setPushMessage({
         type: 'error',
-        text: err.message || 'Failed to send test push notification.',
+        text: getFriendlyErrorMessage(err, 'Failed to send test push notification.'),
       });
     } finally {
       setPushActionLoading(false);
@@ -136,7 +137,7 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
         onSuccess();
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to update phone number.');
+      setErrorMessage(getFriendlyErrorMessage(err, 'Failed to update phone number.'));
     } finally {
       setLoading(false);
     }

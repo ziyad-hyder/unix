@@ -4,6 +4,7 @@ import { compressImage } from '../utils/imageUtils';
 import { X, PlusCircle, AlertCircle, RefreshCw, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
 import useModalA11y from '../hooks/useModalA11y';
 import ConfirmDialog from './ConfirmDialog';
+import { getFriendlyErrorMessage } from '../utils/errors';
 
 const CATEGORIES = [
   { value: 'CALCULATOR', label: 'Scientific Calculator (fx-991CW / ES)' },
@@ -104,7 +105,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
       setImageFile(compressed.blob);
       setImagePreview(compressed.dataUrl);
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to compress image.');
+      setErrorMessage(getFriendlyErrorMessage(err, 'Failed to compress image.'));
     } finally {
       setImageLoading(false);
     }
@@ -170,7 +171,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
       onSuccess?.();
       onClose();
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to create listing. Please check the fields.');
+      setErrorMessage(getFriendlyErrorMessage(err, 'Failed to create listing. Please check the fields.'));
     } finally {
       setLoading(false);
     }

@@ -8,6 +8,7 @@ import {
 import { UniXLogoMark } from '../components/Navbar';
 import Footer from '../components/Footer';
 import { normalizePhone } from '../utils/phone';
+import { getFriendlyErrorMessage } from '../utils/errors';
 
 const CAMPUSES = [
   { id: 'kitsw', name: 'KITS Warangal', domain: '@kitsw.ac.in' },
@@ -38,12 +39,17 @@ export default function LoginPage() {
   const [signUpPhone, setSignUpPhone] = useState('');
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
 
+  // Track last OTP requested details to avoid blocking on "Change Details"
+  const [lastOtpRoll, setLastOtpRoll] = useState('');
+  const [lastOtpName, setLastOtpName] = useState('');
+
   // Feedback & Rate Limiting
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
-  const [cooldown, setCooldown] = useState(0);
+  const [loginCooldown, setLoginCooldown] = useState(0);
+  const [otpCooldown, setOtpCooldown] = useState(0);
 
   const selectedLoginCampus = CAMPUSES.find((c) => c.id === loginCampus) || CAMPUSES[0];
   const selectedSignUpCampus = CAMPUSES.find((c) => c.id === signUpCampus) || CAMPUSES[0];
@@ -62,12 +68,20 @@ export default function LoginPage() {
   }, [isAuthenticated, signUpStep, navigate]);
 
   useEffect(() => {
-    if (cooldown <= 0) return;
+    if (loginCooldown <= 0) return;
     const timer = setInterval(() => {
-      setCooldown((prev) => prev - 1);
+      setLoginCooldown((prev) => Math.max(0, prev - 1));
     }, 1000);
     return () => clearInterval(timer);
-  }, [cooldown]);
+  }, [loginCooldown]);
+
+  useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setOtpCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [otpCooldown]);
 
   const resetErrors = () => {
     setErrorMessage('');
@@ -95,10 +109,14 @@ export default function LoginPage() {
       await login(cleanRoll, loginPassword);
       navigate('/', { replace: true });
     } catch (err) {
-      setErrorMessage(err.message || 'Login failed. Please check your credentials.');
+      setErrorMessage(getFriendlyErrorMessage(err, 'Login failed. Please check your credentials.'));
       if (err.status === 429) {
-        const match = err.message.match(/(\d+)\s*second/i);
-        if (match) setCooldown(parseInt(match[1], 10));
+        const match = (err.message || '').match(/(\d+)\s*second/i);
+        if (match) {
+          setLoginCooldown(parseInt(match[1], 10));
+        } else {
+          setLoginCooldown(60);
+        }
       }
     } finally {
       setLoading(false);
@@ -127,16 +145,25 @@ export default function LoginPage() {
       setLoading(true);
       const res = await registerRequestOtp(cleanRoll, constructedEmail, signUpFullName.trim());
       setSuccessMessage(res?.message || 'Verification code dispatched to your campus email.');
-      setCooldown(60);
+      setLastOtpRoll(cleanRoll);
+      setLastOtpName(signUpFullName.trim());
+      setOtpCooldown(60);
       setSignUpStep(2);
     } catch (err) {
       if (err.status === 409) {
         setErrorMessage('An account already exists with this roll number. Please sign in.');
       } else if (err.status === 429) {
-        const match = err.message.match(/(\d+)\s*second/i);
-        if (match) setCooldown(parseInt(match[1], 10));
+        const match = (err.message || '').match(/(\d+)\s*second/i);
+        if (match) {
+          const seconds = parseInt(match[1], 10);
+          setOtpCooldown(seconds);
+          setErrorMessage(getFriendlyErrorMessage(err, `Too many attempts. Please wait ${seconds}s and try again.`));
+        } else {
+          setOtpCooldown(60);
+          setErrorMessage('Too many attempts. Please wait a minute and try again.');
+        }
       } else {
-        setErrorMessage(err.message || 'Failed to request registration code.');
+        setErrorMessage(getFriendlyErrorMessage(err, 'Failed to request registration code.'));
       }
     } finally {
       setLoading(false);
@@ -160,7 +187,7 @@ export default function LoginPage() {
       setSuccessMessage('Code verified successfully. Please create your password.');
       setSignUpStep(3);
     } catch (err) {
-      setErrorMessage(err.message || 'Invalid verification code.');
+      setErrorMessage(getFriendlyErrorMessage(err, 'Invalid verification code.'));
     } finally {
       setLoading(false);
     }
@@ -189,7 +216,7 @@ export default function LoginPage() {
       setSuccessMessage('Account created! Add your WhatsApp number to make connecting easier.');
       setSignUpStep(4);
     } catch (err) {
-      setErrorMessage(err.message || 'Registration failed. Please try again.');
+      setErrorMessage(getFriendlyErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -211,7 +238,7 @@ export default function LoginPage() {
       await updateUserPhone(normalizedPhone);
       navigate('/', { replace: true });
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to update phone number.');
+      setErrorMessage(getFriendlyErrorMessage(err, 'Failed to update phone number.'));
     } finally {
       setLoading(false);
     }
@@ -369,14 +396,14 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={loading || cooldown > 0 || !loginRollNumber.trim() || !loginPassword}
+                disabled={loading || loginCooldown > 0 || !loginRollNumber.trim() || !loginPassword}
                 className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 {loading ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <>
-                    <span>{cooldown > 0 ? `Wait ${cooldown}s` : 'Sign In'}</span>
+                    <span>{loginCooldown > 0 ? `Wait ${loginCooldown}s` : 'Sign In'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
@@ -486,14 +513,27 @@ export default function LoginPage() {
 
                   <button
                     type="submit"
-                    disabled={loading || cooldown > 0 || !signUpRollNumber.trim() || !signUpFullName.trim()}
+                    disabled={
+                      loading ||
+                      (otpCooldown > 0 &&
+                        signUpRollNumber.trim().toLowerCase().replace(/@.*$/, '') === lastOtpRoll &&
+                        signUpFullName.trim() === lastOtpName) ||
+                      !signUpRollNumber.trim() ||
+                      !signUpFullName.trim()
+                    }
                     className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     {loading ? (
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       <>
-                        <span>{cooldown > 0 ? `Wait ${cooldown}s` : 'Send Verification Code'}</span>
+                        <span>
+                          {otpCooldown > 0 &&
+                          signUpRollNumber.trim().toLowerCase().replace(/@.*$/, '') === lastOtpRoll &&
+                          signUpFullName.trim() === lastOtpName
+                            ? `Wait ${otpCooldown}s`
+                            : 'Send Verification Code'}
+                        </span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </>
                     )}
@@ -564,11 +604,11 @@ export default function LoginPage() {
 
                     <button
                       type="button"
-                      disabled={loading || cooldown > 0}
+                      disabled={loading || otpCooldown > 0}
                       onClick={handleSignUpRequestOtp}
                       className="text-brand-secondary hover:text-brand-primary font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                     >
-                      {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend Code'}
+                      {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend Code'}
                     </button>
                   </div>
                 </form>

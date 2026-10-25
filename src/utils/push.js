@@ -1,5 +1,6 @@
 import api from '../api/api.js';
 import { isRunningStandalone, isIOSSafari } from './pwa.js';
+import { getFriendlyErrorMessage } from './errors.js';
 
 /**
  * Converts a base64url-encoded VAPID public key to a Uint8Array.
@@ -119,7 +120,8 @@ export async function subscribeToPush() {
 
   const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
   if (!vapidPublicKey || vapidPublicKey.trim() === '' || vapidPublicKey.includes('YOUR_')) {
-    throw new Error('VAPID public key is not configured. Please set VITE_VAPID_PUBLIC_KEY in .env.local.');
+    console.error('VAPID public key is not configured. Please set VITE_VAPID_PUBLIC_KEY in .env.local.');
+    throw new Error("Notifications aren't available right now.");
   }
 
   // 1. Request permission
@@ -147,13 +149,17 @@ export async function subscribeToPush() {
 
   // 4. Send subscription JSON to backend (POST /api/push/subscribe)
   const subJson = subscription.toJSON();
-  await api.post('/api/push/subscribe', {
-    endpoint: subJson.endpoint,
-    keys: {
-      p256dh: subJson.keys?.p256dh,
-      auth: subJson.keys?.auth,
-    },
-  });
+  try {
+    await api.post('/api/push/subscribe', {
+      endpoint: subJson.endpoint,
+      keys: {
+        p256dh: subJson.keys?.p256dh,
+        auth: subJson.keys?.auth,
+      },
+    });
+  } catch (err) {
+    throw new Error(getFriendlyErrorMessage(err, 'Failed to register notification subscription.'));
+  }
 
   return subscription;
 }
@@ -194,6 +200,10 @@ export async function unsubscribeFromPush() {
  * Calls backend POST /api/push/test to send a test notification to the current user.
  */
 export async function sendTestPush() {
-  const res = await api.post('/api/push/test');
-  return res.data;
+  try {
+    const res = await api.post('/api/push/test');
+    return res.data;
+  } catch (err) {
+    throw new Error(getFriendlyErrorMessage(err, 'Failed to send test push notification.'));
+  }
 }

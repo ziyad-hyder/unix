@@ -1,5 +1,5 @@
-import { formatDuration } from './time';
-import { FREEZE_AFTER_OVERDUE_HOURS, CODE_LOCK_MINUTES } from './policy';
+import { formatDuration } from './time.js';
+import { FREEZE_AFTER_OVERDUE_HOURS, CODE_LOCK_MINUTES } from './policy.js';
 
 /**
  * Central Error Code Mapping & Sanitizer for UniX Frontend
@@ -90,8 +90,7 @@ export function getFriendlyErrorMessage(err, fallbackMessage = 'An unexpected er
       rawMessage.toLowerCase().includes('spring') ||
       rawMessage.toLowerCase().includes('hibernate') ||
       rawMessage.toLowerCase().includes('stack trace') ||
-      rawMessage.toLowerCase().includes('sql') ||
-      rawMessage.includes('/');
+      rawMessage.toLowerCase().includes('sql');
 
     if (!isInternalString && rawMessage.trim().length > 0 && rawMessage.trim().length < 150) {
       return rawMessage;
