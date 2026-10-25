@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import useModalA11y from '../hooks/useModalA11y';
@@ -35,6 +35,16 @@ export default function ListingDetailModal({
   onRequestAddPhone,
 }) {
   const { user } = useAuth();
+  const id = useId();
+  const editTitleId = `${id}-edit-title`;
+  const editCategoryId = `${id}-edit-category`;
+  const editTypeId = `${id}-edit-type`;
+  const editPriceId = `${id}-edit-price`;
+  const editRentalRateId = `${id}-edit-rental-rate`;
+  const editRentalPeriodId = `${id}-edit-rental-period`;
+  const editDepositId = `${id}-edit-deposit`;
+  const editSwapId = `${id}-edit-swap`;
+  const editDescId = `${id}-edit-desc`;
 
   // Mode: 'VIEW' | 'EDIT'
   const [mode, setMode] = useState('VIEW');
@@ -472,24 +482,26 @@ export default function ListingDetailModal({
         {mode === 'EDIT' && (
           <form onSubmit={handleSaveEdit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
             <div>
-              <label className="block text-xs font-semibold text-ink-primary mb-1">Item Title <span className="text-red-600">*</span></label>
+              <label htmlFor={editTitleId} className="block text-xs font-semibold text-ink-primary mb-1">Item Title <span className="text-red-600">*</span></label>
               <input
+                id={editTitleId}
                 type="text"
                 required
                 maxLength={150}
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary font-medium"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-ink-primary mb-1">Category <span className="text-red-600">*</span></label>
+                <label htmlFor={editCategoryId} className="block text-xs font-semibold text-ink-primary mb-1">Category <span className="text-red-600">*</span></label>
                 <select
+                  id={editCategoryId}
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value)}
-                  className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
+                  className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary font-medium cursor-pointer"
                 >
                   {CATEGORIES.map((cat) => (
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -498,11 +510,12 @@ export default function ListingDetailModal({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-ink-primary mb-1">Listing Type <span className="text-red-600">*</span></label>
+                <label htmlFor={editTypeId} className="block text-xs font-semibold text-ink-primary mb-1">Listing Type <span className="text-red-600">*</span></label>
                 <select
+                  id={editTypeId}
                   value={editType}
                   onChange={(e) => setEditType(e.target.value)}
-                  className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
+                  className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary font-medium cursor-pointer"
                 >
                   <option value="RENT">Rent</option>
                   <option value="SELL">Buy</option>
@@ -513,15 +526,16 @@ export default function ListingDetailModal({
 
             {editType === 'SELL' && (
               <div className="p-3.5 rounded-xl bg-brand-primary/5 border border-brand-primary/15">
-                <label className="block text-xs font-semibold text-ink-primary mb-1">Selling Price (INR) <span className="text-red-600">*</span></label>
+                <label htmlFor={editPriceId} className="block text-xs font-semibold text-ink-primary mb-1">Selling Price (INR) <span className="text-red-600">*</span></label>
                 <input
+                  id={editPriceId}
                   type="number"
                   step="0.01"
                   min="0"
                   required
                   value={editPrice}
                   onChange={(e) => setEditPrice(e.target.value)}
-                  className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono font-semibold"
+                  className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary"
                 />
               </div>
             )}
@@ -530,23 +544,25 @@ export default function ListingDetailModal({
               <div className="p-3.5 rounded-xl bg-brand-secondary/5 border border-brand-secondary/20 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-ink-primary mb-1">Rental Rate (INR) <span className="text-red-600">*</span></label>
+                    <label htmlFor={editRentalRateId} className="block text-xs font-semibold text-ink-primary mb-1">Rental Rate (INR) <span className="text-red-600">*</span></label>
                     <input
+                      id={editRentalRateId}
                       type="number"
                       step="0.01"
                       min="0"
                       required
                       value={editRentalRate}
                       onChange={(e) => setEditRentalRate(e.target.value)}
-                      className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono font-semibold"
+                      className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-ink-primary mb-1">Period Unit <span className="text-red-600">*</span></label>
+                    <label htmlFor={editRentalPeriodId} className="block text-xs font-semibold text-ink-primary mb-1">Period Unit <span className="text-red-600">*</span></label>
                     <select
+                      id={editRentalPeriodId}
                       value={editRentalPeriod}
                       onChange={(e) => setEditRentalPeriod(e.target.value)}
-                      className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-medium cursor-pointer"
+                      className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary"
                     >
                       {RENTAL_PERIODS.map((p) => (
                         <option key={p.value} value={p.value}>{p.label}</option>
@@ -555,14 +571,15 @@ export default function ListingDetailModal({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-ink-primary mb-1">Refundable Deposit (INR)</label>
+                  <label htmlFor={editDepositId} className="block text-xs font-semibold text-ink-primary mb-1">Refundable Deposit (INR)</label>
                   <input
+                    id={editDepositId}
                     type="number"
                     step="0.01"
                     min="0"
                     value={editDepositAmount}
                     onChange={(e) => setEditDepositAmount(e.target.value)}
-                    className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono"
+                    className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary"
                   />
                 </div>
               </div>
@@ -570,26 +587,28 @@ export default function ListingDetailModal({
 
             {editType === 'SWAP' && (
               <div className="p-3.5 rounded-xl bg-brand-accent/15 border border-brand-accent/35">
-                <label className="block text-xs font-semibold text-ink-primary mb-1">Swap Preferences</label>
+                <label htmlFor={editSwapId} className="block text-xs font-semibold text-ink-primary mb-1">Swap Preferences</label>
                 <input
+                  id={editSwapId}
                   type="text"
                   maxLength={500}
                   value={editSwapPreferences}
                   onChange={(e) => setEditSwapPreferences(e.target.value)}
-                  className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary"
+                  className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-ink-primary mb-1">Description <span className="text-red-600">*</span></label>
+              <label htmlFor={editDescId} className="block text-xs font-semibold text-ink-primary mb-1">Description <span className="text-red-600">*</span></label>
               <textarea
+                id={editDescId}
                 required
                 rows={3}
                 maxLength={2000}
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary resize-none"
+                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary resize-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary"
               />
             </div>
 
@@ -597,14 +616,14 @@ export default function ListingDetailModal({
               <button
                 type="button"
                 onClick={() => setMode('VIEW')}
-                className="px-3.5 py-2 text-xs font-semibold text-ink-secondary hover:bg-brand-primary/5 rounded-lg transition-colors cursor-pointer"
+                className="px-3.5 py-2 text-xs font-semibold text-ink-secondary hover:bg-brand-primary/5 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
               >
                 {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 <span>Save Changes</span>

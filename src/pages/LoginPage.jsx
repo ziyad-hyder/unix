@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -18,6 +18,20 @@ export default function LoginPage() {
   const { isAuthenticated, login, registerRequestOtp, registerVerifyOtp, registerConfirm, updateUserPhone } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const id = useId();
+  const loginCampusId = `${id}-login-campus`;
+  const loginRollId = `${id}-login-roll`;
+  const loginPasswordId = `${id}-login-password`;
+  const signUpCampusId = `${id}-signup-campus`;
+  const signUpRollId = `${id}-signup-roll`;
+  const signUpRollHelpId = `${id}-signup-roll-help`;
+  const signUpNameId = `${id}-signup-name`;
+  const signUpOtpId = `${id}-signup-otp`;
+  const signUpPasswordId = `${id}-signup-password`;
+  const signUpConfirmPasswordId = `${id}-signup-confirm-password`;
+  const signUpPhoneId = `${id}-signup-phone`;
+  const signUpPhoneHelpId = `${id}-signup-phone-help`;
 
   const fromState = location.state?.from;
   const from = fromState
@@ -280,7 +294,7 @@ export default function LoginPage() {
                 setAuthMode('SIGN_IN');
                 resetErrors();
               }}
-              className={`w-1/2 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${authMode === 'SIGN_IN'
+              className={`w-1/2 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${authMode === 'SIGN_IN'
                 ? 'bg-brand-primary text-white'
                 : 'text-ink-secondary hover:text-ink-primary'
                 }`}
@@ -294,7 +308,7 @@ export default function LoginPage() {
                 setSignUpStep(1);
                 resetErrors();
               }}
-              className={`w-1/2 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${authMode === 'SIGN_UP'
+              className={`w-1/2 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${authMode === 'SIGN_UP'
                 ? 'bg-brand-primary text-white'
                 : 'text-ink-secondary hover:text-ink-primary'
                 }`}
@@ -331,7 +345,7 @@ export default function LoginPage() {
           {authMode === 'SIGN_IN' && (
             <form onSubmit={handleSignIn} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-ink-primary mb-1">
+                <label htmlFor={loginCampusId} className="block text-xs font-semibold text-ink-primary mb-1">
                   Select Campus
                 </label>
                 <div className="relative">
@@ -339,9 +353,10 @@ export default function LoginPage() {
                     <School className="w-4 h-4" />
                   </div>
                   <select
+                    id={loginCampusId}
                     value={loginCampus}
                     onChange={(e) => setLoginCampus(e.target.value)}
-                    className="block w-full pl-9 pr-8 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
+                    className="block w-full pl-9 pr-8 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary font-medium cursor-pointer"
                   >
                     {CAMPUSES.map((campus) => (
                       <option key={campus.id} value={campus.id}>
@@ -353,14 +368,15 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-ink-primary mb-1">
+                <label htmlFor={loginRollId} className="block text-xs font-semibold text-ink-primary mb-1">
                   Roll Number / Student ID
                 </label>
-                <div className="flex rounded-lg border border-brand-secondary/25 overflow-hidden bg-brand-bg/60 focus-within:ring-2 focus-within:ring-brand-light/30 focus-within:border-brand-secondary transition-colors">
+                <div className="flex rounded-lg border border-brand-secondary/25 overflow-hidden bg-brand-bg/60 focus-within:ring-2 focus-within:ring-brand-primary focus-within:border-brand-primary transition-colors">
                   <div className="pl-3 flex items-center pointer-events-none text-ink-secondary">
                     <User className="w-4 h-4" />
                   </div>
                   <input
+                    id={loginRollId}
                     type="text"
                     required
                     autoComplete="username"
@@ -376,7 +392,7 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-ink-primary mb-1">
+                <label htmlFor={loginPasswordId} className="block text-xs font-semibold text-ink-primary mb-1">
                   Account Password
                 </label>
                 <div className="relative">
@@ -384,18 +400,19 @@ export default function LoginPage() {
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
+                    id={loginPasswordId}
                     type={showLoginPassword ? 'text' : 'password'}
                     required
                     autoComplete="current-password"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="block w-full pl-9 pr-10 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                    className="block w-full pl-9 pr-10 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary font-medium"
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink-secondary hover:text-ink-primary cursor-pointer"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink-secondary hover:text-ink-primary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded"
                     aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
                   >
                     {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -406,7 +423,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading || loginCooldown > 0 || !loginRollNumber.trim() || !loginPassword}
-                className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
               >
                 {loading ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -458,7 +475,7 @@ export default function LoginPage() {
               {signUpStep === 1 && (
                 <form onSubmit={handleSignUpRequestOtp} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-ink-primary mb-1">
+                    <label htmlFor={signUpCampusId} className="block text-xs font-semibold text-ink-primary mb-1">
                       Select Campus
                     </label>
                     <div className="relative">
@@ -466,9 +483,10 @@ export default function LoginPage() {
                         <School className="w-4 h-4" />
                       </div>
                       <select
+                        id={signUpCampusId}
                         value={signUpCampus}
                         onChange={(e) => setSignUpCampus(e.target.value)}
-                        className="block w-full pl-9 pr-8 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium cursor-pointer"
+                        className="block w-full pl-9 pr-8 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary font-medium cursor-pointer"
                       >
                         {CAMPUSES.map((campus) => (
                           <option key={campus.id} value={campus.id}>
@@ -480,17 +498,19 @@ export default function LoginPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-ink-primary mb-1">
+                    <label htmlFor={signUpRollId} className="block text-xs font-semibold text-ink-primary mb-1">
                       Roll Number / Student ID
                     </label>
-                    <div className="flex rounded-lg border border-brand-secondary/25 overflow-hidden bg-brand-bg/60 focus-within:ring-2 focus-within:ring-brand-light/30 focus-within:border-brand-secondary transition-colors">
+                    <div className="flex rounded-lg border border-brand-secondary/25 overflow-hidden bg-brand-bg/60 focus-within:ring-2 focus-within:ring-brand-primary focus-within:border-brand-primary transition-colors">
                       <div className="pl-3 flex items-center pointer-events-none text-ink-secondary">
                         <User className="w-4 h-4" />
                       </div>
                       <input
+                        id={signUpRollId}
                         type="text"
                         required
                         autoComplete="username"
+                        aria-describedby={signUpRollHelpId}
                         value={signUpRollNumber}
                         onChange={(e) => setSignUpRollNumber(e.target.value.replace(/@.*$/, ''))}
                         placeholder="e.g. b24cs052"
@@ -500,23 +520,24 @@ export default function LoginPage() {
                         {selectedSignUpCampus.domain}
                       </div>
                     </div>
-                    <p className="mt-1 text-[10px] text-ink-secondary">
+                    <p id={signUpRollHelpId} className="mt-1 text-[10px] text-ink-secondary">
                       Verification code will be sent to this campus email.
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-ink-primary mb-1">
+                    <label htmlFor={signUpNameId} className="block text-xs font-semibold text-ink-primary mb-1">
                       Full Name
                     </label>
                     <input
+                      id={signUpNameId}
                       type="text"
                       required
                       autoComplete="name"
                       value={signUpFullName}
                       onChange={(e) => setSignUpFullName(e.target.value)}
                       placeholder="e.g. Rahul Sharma"
-                      className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                      className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary font-medium"
                     />
                   </div>
 
@@ -530,7 +551,7 @@ export default function LoginPage() {
                       !signUpRollNumber.trim() ||
                       !signUpFullName.trim()
                     }
-                    className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                   >
                     {loading ? (
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -561,7 +582,7 @@ export default function LoginPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-ink-primary mb-1">
+                    <label htmlFor={signUpOtpId} className="block text-xs font-semibold text-ink-primary mb-1">
                       6-Digit Verification Code
                     </label>
                     <div className="relative">
@@ -569,6 +590,7 @@ export default function LoginPage() {
                         <KeyRound className="w-4 h-4" />
                       </div>
                       <input
+                        id={signUpOtpId}
                         type="text"
                         required
                         maxLength={6}
@@ -578,7 +600,7 @@ export default function LoginPage() {
                         value={signUpOtp}
                         onChange={(e) => setSignUpOtp(e.target.value.replace(/\D/g, ''))}
                         placeholder="123456"
-                        className="block w-full pl-9 pr-3 py-2 text-center tracking-[0.4em] text-base sm:text-sm font-mono font-bold border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/30 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary"
+                        className="block w-full pl-9 pr-3 py-2 text-center tracking-[0.4em] text-base sm:text-sm font-mono font-bold border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary"
                       />
                     </div>
                   </div>
@@ -586,7 +608,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={loading || signUpOtp.length !== 6}
-                    className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                   >
                     {loading ? (
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -606,7 +628,7 @@ export default function LoginPage() {
                         setSignUpOtp('');
                         resetErrors();
                       }}
-                      className="text-ink-secondary hover:text-ink-primary font-medium cursor-pointer"
+                      className="text-ink-secondary hover:text-ink-primary font-medium cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded"
                     >
                       Change Details
                     </button>
@@ -615,7 +637,7 @@ export default function LoginPage() {
                       type="button"
                       disabled={loading || otpCooldown > 0}
                       onClick={handleSignUpRequestOtp}
-                      className="text-brand-secondary hover:text-brand-primary font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      className="text-brand-secondary hover:text-brand-primary font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded"
                     >
                       {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend Code'}
                     </button>
@@ -639,7 +661,7 @@ export default function LoginPage() {
 
                   {/* New Password */}
                   <div>
-                    <label className="block text-xs font-semibold text-ink-primary mb-1">
+                    <label htmlFor={signUpPasswordId} className="block text-xs font-semibold text-ink-primary mb-1">
                       Create Password (min. 6 characters)
                     </label>
                     <div className="relative">
@@ -647,6 +669,7 @@ export default function LoginPage() {
                         <Lock className="w-4 h-4" />
                       </div>
                       <input
+                        id={signUpPasswordId}
                         type={showSignUpPassword ? 'text' : 'password'}
                         required
                         autoFocus
@@ -655,12 +678,12 @@ export default function LoginPage() {
                         value={signUpPassword}
                         onChange={(e) => setSignUpPassword(e.target.value)}
                         placeholder="Create strong password"
-                        className="block w-full pl-9 pr-10 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                        className="block w-full pl-9 pr-10 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary font-medium"
                       />
                       <button
                         type="button"
                         onClick={() => setShowSignUpPassword(!showSignUpPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink-secondary hover:text-ink-primary cursor-pointer"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink-secondary hover:text-ink-primary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded"
                         aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
                       >
                         {showSignUpPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -670,10 +693,11 @@ export default function LoginPage() {
 
                   {/* Confirm Password */}
                   <div>
-                    <label className="block text-xs font-semibold text-ink-primary mb-1">
+                    <label htmlFor={signUpConfirmPasswordId} className="block text-xs font-semibold text-ink-primary mb-1">
                       Confirm Password
                     </label>
                     <input
+                      id={signUpConfirmPasswordId}
                       type="password"
                       required
                       minLength={6}
@@ -681,14 +705,14 @@ export default function LoginPage() {
                       value={signUpConfirmPassword}
                       onChange={(e) => setSignUpConfirmPassword(e.target.value)}
                       placeholder="Re-type password"
-                      className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                      className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary font-medium"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={loading || !signUpPassword || signUpPassword.length < 6}
-                    className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                   >
                     {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : 'Complete Registration & Sign In'}
                   </button>
@@ -700,7 +724,7 @@ export default function LoginPage() {
                         setSignUpStep(2);
                         resetErrors();
                       }}
-                      className="text-xs text-ink-secondary hover:text-ink-primary font-medium cursor-pointer"
+                      className="text-xs text-ink-secondary hover:text-ink-primary font-medium cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded"
                     >
                       Back to verification code
                     </button>
@@ -723,10 +747,10 @@ export default function LoginPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-ink-primary mb-1">
+                    <label htmlFor={signUpPhoneId} className="block text-xs font-semibold text-ink-primary mb-1">
                       WhatsApp Phone Number
                     </label>
-                    <p className="text-[11px] text-ink-secondary mb-1.5">
+                    <p id={signUpPhoneHelpId} className="text-[11px] text-ink-secondary mb-1.5">
                       Needed to request or accept items. You can add it later in Profile.
                     </p>
                     <div className="relative">
@@ -734,13 +758,15 @@ export default function LoginPage() {
                         <Phone className="w-4 h-4" />
                       </div>
                       <input
+                        id={signUpPhoneId}
                         type="tel"
                         autoFocus
                         autoComplete="tel"
+                        aria-describedby={signUpPhoneHelpId}
                         value={signUpPhone}
                         onChange={(e) => setSignUpPhone(e.target.value)}
                         placeholder="10-digit mobile number (we add +91)"
-                        className="block w-full pl-9 pr-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-mono font-medium"
+                        className="block w-full pl-9 pr-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary font-mono font-medium"
                       />
                     </div>
                     <p className="mt-1 text-[10px] text-ink-secondary">
@@ -759,7 +785,7 @@ export default function LoginPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 transition-colors cursor-pointer"
+                      className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                     >
                       {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : 'Save Number & Enter UniX'}
                     </button>
@@ -767,7 +793,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={handleSkipPhone}
-                      className="w-full py-2 px-4 rounded-lg text-xs font-medium text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 transition-colors cursor-pointer"
+                      className="w-full py-2 px-4 rounded-lg text-xs font-medium text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                     >
                       Skip for now
                     </button>

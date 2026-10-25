@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useId } from 'react';
 import { useAuth } from '../context/AuthContext';
 import useModalA11y from '../hooks/useModalA11y';
 import { 
@@ -16,6 +16,9 @@ import { getFriendlyErrorMessage } from '../utils/errors';
 
 export default function ProfileModal({ isOpen, onClose, onSuccess }) {
   const { user, updateUserPhone } = useAuth();
+  const id = useId();
+  const phoneInputId = `${id}-phone`;
+  const phoneHelpId = `${id}-phone-help`;
 
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
@@ -173,7 +176,7 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
           <button
             onClick={onClose}
             disabled={loading || pushActionLoading}
-            className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             aria-label="Close modal"
           >
             <X className="w-4 h-4" />
@@ -221,7 +224,7 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
 
           {/* WhatsApp Phone Number */}
           <div>
-            <label className="block text-xs font-semibold text-ink-primary mb-1">
+            <label htmlFor={phoneInputId} className="block text-xs font-semibold text-ink-primary mb-1">
               WhatsApp Contact Number
             </label>
             <div className="relative">
@@ -229,15 +232,17 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
                 <Phone className="w-4 h-4" />
               </div>
               <input
+                id={phoneInputId}
                 type="tel"
                 autoComplete="tel"
+                aria-describedby={phoneHelpId}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="10-digit mobile number (we add +91)"
-                className="block w-full pl-9 pr-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-mono font-medium"
+                className="block w-full pl-9 pr-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary transition-colors font-mono font-medium"
               />
             </div>
-            <p className="mt-1 text-[10px] text-ink-secondary">
+            <p id={phoneHelpId} className="mt-1 text-[10px] text-ink-secondary">
               10-digit mobile number (we add +91)
             </p>
 
@@ -355,7 +360,7 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-3.5 py-2 text-xs font-semibold text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 rounded-lg transition-colors cursor-pointer"
+              className="px-3.5 py-2 text-xs font-semibold text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               Close
             </button>
@@ -363,7 +368,7 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               {loading ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />

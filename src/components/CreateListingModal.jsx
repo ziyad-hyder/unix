@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import api from '../api/api';
 import { compressImage } from '../utils/imageUtils';
 import { X, PlusCircle, AlertCircle, RefreshCw, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
@@ -21,6 +21,18 @@ const RENTAL_PERIODS = [
 ];
 
 export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
+  const id = useId();
+  const titleId = `${id}-title`;
+  const categoryId = `${id}-category`;
+  const typeId = `${id}-type`;
+  const priceId = `${id}-price`;
+  const rentalRateId = `${id}-rental-rate`;
+  const rentalPeriodId = `${id}-rental-period`;
+  const depositId = `${id}-deposit`;
+  const swapId = `${id}-swap`;
+  const descriptionId = `${id}-description`;
+  const imageInputId = `${id}-image`;
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0].value);
@@ -209,7 +221,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
               type="button"
               onClick={handleRequestClose}
               disabled={loading || imageLoading}
-              className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
               aria-label="Close modal"
             >
               <X className="w-4 h-4" />
@@ -229,30 +241,32 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-semibold text-ink-primary mb-1">
+            <label htmlFor={titleId} className="block text-xs font-semibold text-ink-primary mb-1">
               Item Title <span className="text-red-600">*</span>
             </label>
             <input
+              id={titleId}
               type="text"
               required
               maxLength={150}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Casio fx-991CW Calculator (1st Year)"
-              className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium"
+              className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary transition-colors font-medium"
             />
           </div>
 
           {/* Category & Listing Type Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-ink-primary mb-1">
+              <label htmlFor={categoryId} className="block text-xs font-semibold text-ink-primary mb-1">
                 Category <span className="text-red-600">*</span>
               </label>
               <select
+                id={categoryId}
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium cursor-pointer"
+                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary transition-colors font-medium cursor-pointer"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.value} value={cat.value}>
@@ -263,13 +277,14 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-ink-primary mb-1">
+              <label htmlFor={typeId} className="block text-xs font-semibold text-ink-primary mb-1">
                 Listing Type <span className="text-red-600">*</span>
               </label>
               <select
+                id={typeId}
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium cursor-pointer"
+                className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary transition-colors font-medium cursor-pointer"
               >
                 <option value="RENT">Rent (Lend for duration)</option>
                 <option value="SELL">Buy (Outright Purchase)</option>
@@ -281,7 +296,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
           {/* Dynamic Pricing / Conditions Fields */}
           {type === 'SELL' && (
             <div className="p-3.5 rounded-xl bg-brand-primary/5 border border-brand-primary/15 space-y-2">
-              <label className="block text-xs font-semibold text-ink-primary mb-1">
+              <label htmlFor={priceId} className="block text-xs font-semibold text-ink-primary mb-1">
                 Selling Price (INR) <span className="text-red-600">*</span>
               </label>
               <div className="relative">
@@ -289,6 +304,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
                   ₹
                 </div>
                 <input
+                  id={priceId}
                   type="number"
                   step="0.01"
                   min="0"
@@ -296,7 +312,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="350.00"
-                  className="block w-full pl-7 pr-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-mono font-semibold"
+                  className="block w-full pl-7 pr-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary transition-colors font-mono font-semibold"
                 />
               </div>
             </div>
@@ -306,7 +322,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
             <div className="p-3.5 rounded-xl bg-brand-secondary/5 border border-brand-secondary/20 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-ink-primary mb-1">
+                  <label htmlFor={rentalRateId} className="block text-xs font-semibold text-ink-primary mb-1">
                     Rental Rate (INR) <span className="text-red-600">*</span>
                   </label>
                   <div className="relative">
@@ -314,6 +330,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
                       ₹
                     </div>
                     <input
+                      id={rentalRateId}
                       type="number"
                       step="0.01"
                       min="0"
@@ -321,19 +338,20 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
                       value={rentalRate}
                       onChange={(e) => setRentalRate(e.target.value)}
                       placeholder="100.00"
-                      className="block w-full pl-7 pr-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-mono font-semibold"
+                      className="block w-full pl-7 pr-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary transition-colors font-mono font-semibold"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-ink-primary mb-1">
+                  <label htmlFor={rentalPeriodId} className="block text-xs font-semibold text-ink-primary mb-1">
                     Period Unit <span className="text-red-600">*</span>
                   </label>
                   <select
+                    id={rentalPeriodId}
                     value={rentalPeriod}
                     onChange={(e) => setRentalPeriod(e.target.value)}
-                    className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-medium cursor-pointer"
+                    className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary transition-colors font-medium cursor-pointer"
                   >
                     {RENTAL_PERIODS.map((p) => (
                       <option key={p.value} value={p.value}>
@@ -345,7 +363,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-ink-primary mb-1">
+                <label htmlFor={depositId} className="block text-xs font-semibold text-ink-primary mb-1">
                   Refundable Security Deposit (INR) <span className="text-ink-secondary/70 font-normal">(optional)</span>
                 </label>
                 <div className="relative">
@@ -353,13 +371,14 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
                     ₹
                   </div>
                   <input
+                    id={depositId}
                     type="number"
                     step="0.01"
                     min="0"
                     value={depositAmount}
                     onChange={(e) => setDepositAmount(e.target.value)}
                     placeholder="400.00"
-                    className="block w-full pl-7 pr-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-mono"
+                    className="block w-full pl-7 pr-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary transition-colors font-mono"
                   />
                 </div>
               </div>
@@ -368,39 +387,41 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
 
           {type === 'SWAP' && (
             <div className="p-3.5 rounded-xl bg-brand-accent/15 border border-brand-accent/35 space-y-1.5">
-              <label className="block text-xs font-semibold text-ink-primary mb-1">
+              <label htmlFor={swapId} className="block text-xs font-semibold text-ink-primary mb-1">
                 What item are you looking to swap for?
               </label>
               <input
+                id={swapId}
                 type="text"
                 maxLength={500}
                 value={swapPreferences}
                 onChange={(e) => setSwapPreferences(e.target.value)}
                 placeholder="e.g. Seeking Casio fx-991ES or standard Mini-Drafter"
-                className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors"
+                className="block w-full px-3 py-1.5 text-base sm:text-xs border border-brand-secondary/30 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary transition-colors"
               />
             </div>
           )}
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-semibold text-ink-primary mb-1">
+            <label htmlFor={descriptionId} className="block text-xs font-semibold text-ink-primary mb-1">
               Item Description & Condition <span className="text-red-600">*</span>
             </label>
             <textarea
+              id={descriptionId}
               required
               rows={3}
               maxLength={2000}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe item condition, inclusions (cases, clips, batteries), and preferred meetup spot on campus..."
-              className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors resize-none"
+              className="block w-full px-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary transition-colors resize-none"
             />
           </div>
 
           {/* Optional Listing Image Picker */}
           <div>
-            <label className="block text-xs font-semibold text-ink-primary mb-1">
+            <label htmlFor={imageInputId} className="block text-xs font-semibold text-ink-primary mb-1 cursor-pointer">
               Photo of Item <span className="text-ink-secondary/70 font-normal">(optional, single image)</span>
             </label>
             
@@ -410,7 +431,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
               accept="image/jpeg,image/png,image/webp"
               onChange={handleImageChange}
               className="hidden"
-              id="listing-image-upload"
+              id={imageInputId}
             />
 
             {!imagePreview ? (
@@ -469,7 +490,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
               type="button"
               onClick={handleRequestClose}
               disabled={loading || imageLoading}
-              className="px-3.5 py-2 text-xs font-semibold text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3.5 py-2 text-xs font-semibold text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               Cancel
             </button>
@@ -477,7 +498,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
             <button
               type="submit"
               disabled={loading || imageLoading}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               {loading ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />

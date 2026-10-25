@@ -864,12 +864,12 @@ export default function DashboardPage() {
                     value={codeInputs[req.id] || ''}
                     onChange={(e) => handleCodeInputChange(req.id, e.target.value)}
                     disabled={actionLoadingId === req.id}
-                    className="w-full sm:w-32 px-3 py-1.5 text-center font-mono text-base sm:text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                    className="w-full sm:w-32 px-3 py-1.5 text-center font-mono text-base sm:text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary"
                   />
                   <button
                     onClick={() => handleVerifyCode(req.id, 'verify-handoff', codeInputs[req.id], 'Handoff verified successfully. Lease is now active.')}
                     disabled={actionLoadingId === req.id || (codeInputs[req.id] || '').length !== 6}
-                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                   >
                     {actionLoadingId === req.id ? (
                       <RefreshCw className="w-3 h-3 animate-spin" />
@@ -1261,12 +1261,12 @@ export default function DashboardPage() {
                   value={codeInputs[req.id] || ''}
                   onChange={(e) => handleCodeInputChange(req.id, e.target.value)}
                   disabled={actionLoadingId === req.id}
-                  className="w-full sm:w-32 px-3 py-1.5 text-center font-mono text-base sm:text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                  className="w-full sm:w-32 px-3 py-1.5 text-center font-mono text-base sm:text-sm tracking-widest bg-white border border-brand-secondary/30 rounded-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary"
                 />
                 <button
                   onClick={() => handleVerifyCode(req.id, 'verify-return', codeInputs[req.id], 'Return verified successfully. Transaction completed.')}
                   disabled={actionLoadingId === req.id || (codeInputs[req.id] || '').length !== 6}
-                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                 >
                   {actionLoadingId === req.id ? (
                     <RefreshCw className="w-3 h-3 animate-spin" />
@@ -1457,8 +1457,18 @@ export default function DashboardPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search resources..."
-                    className="block w-full pl-8 pr-3 py-1.5 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-medium"
+                    className="block w-full pl-8 pr-8 py-1.5 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-white text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary font-medium"
                   />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      aria-label="Clear search"
+                      className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-ink-secondary hover:text-ink-primary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1552,24 +1562,47 @@ export default function DashboardPage() {
                 </button>
               </div>
             ) : filteredListings.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-dashed border-brand-secondary/30 p-10 sm:p-14 text-center">
-                <div className="w-10 h-10 rounded-lg bg-brand-primary/5 text-ink-secondary flex items-center justify-center mx-auto mb-3">
-                  <PackageOpen className="w-5 h-5" />
+              (selectedCategory !== 'ALL' || selectedType !== 'ALL' || searchQuery.trim()) ? (
+                <div className="bg-white rounded-2xl border border-dashed border-brand-secondary/30 p-10 sm:p-14 text-center">
+                  <div className="w-10 h-10 rounded-lg bg-brand-primary/5 text-ink-secondary flex items-center justify-center mx-auto mb-3">
+                    <Search className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-sm font-bold text-ink-primary">No listings match these filters</h3>
+                  <p className="text-xs text-ink-secondary max-w-sm mx-auto mt-1">
+                    Try adjusting or clearing your category, type, or search query to see more results.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory('ALL');
+                      setSelectedType('ALL');
+                      setSearchQuery('');
+                    }}
+                    className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Clear filters</span>
+                  </button>
                 </div>
-                <h3 className="text-sm font-bold text-ink-primary">No active listings found</h3>
-                <p className="text-xs text-ink-secondary max-w-sm mx-auto mt-1">
-                  {searchQuery
-                    ? 'No items matched your search query. Try broadening your filters.'
-                    : 'Be the first to list a calculator, drafting kit, or lab resource for fellow KITSW students.'}
-                </p>
-                <button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary transition-colors cursor-pointer"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  <span>Create First Listing</span>
-                </button>
-              </div>
+              ) : (
+                <div className="bg-white rounded-2xl border border-dashed border-brand-secondary/30 p-10 sm:p-14 text-center">
+                  <div className="w-10 h-10 rounded-lg bg-brand-primary/5 text-ink-secondary flex items-center justify-center mx-auto mb-3">
+                    <PackageOpen className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-sm font-bold text-ink-primary">No active listings found</h3>
+                  <p className="text-xs text-ink-secondary max-w-sm mx-auto mt-1">
+                    Be the first to list a calculator, drafting kit, or lab resource for fellow KITSW students.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>Create First Listing</span>
+                  </button>
+                </div>
+              )
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
