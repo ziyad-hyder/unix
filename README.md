@@ -43,7 +43,7 @@ An overdue lease freezes the borrower's account only if both parties confirmed t
 
 ### Contact reveal
 
-WhatsApp numbers never appear on listings. They are revealed to both parties only while a transaction is in an active state, and hidden again when it ends.
+WhatsApp numbers never appear on listings. They are revealed to both parties only while a transaction is in an active state, and hidden again when it ends. Phone numbers are prompted contextually (missing numbers return `PHONE_REQUIRED`, presenting an "Add WhatsApp number" button) and normalized to E.164 (+91).
 
 ### Push notifications
 
@@ -55,7 +55,7 @@ Real-time push notifications keep students informed throughout the transaction l
 
 ### Cross-site auth on iOS Safari
 
-The frontend (Cloudflare Pages) and the API are on different domains. Even with `SameSite=None; Secure`, WebKit's tracking prevention blocks the session cookie. The API now also returns the JWT in the login response body, and an Axios interceptor sends it as `Authorization: Bearer`. The backend checks the header first and falls back to the cookie.
+The frontend (Cloudflare Pages) and the API are on different domains. Even with `SameSite=None; Secure`, WebKit's tracking prevention blocks the session cookie. The API now also returns the JWT in the login response body, and an Axios interceptor sends it as `Authorization: Bearer`. The Bearer token is kept in localStorage for iOS ITP compatibility, so it is readable by any XSS (mitigated by React auto-escaping and no user-HTML rendering); the HttpOnly cookie remains the fallback. The backend checks the header first and falls back to the cookie.
 
 ### Memory limits on a 1 GB VM
 
@@ -75,7 +75,7 @@ UniX runs as an installable Progressive Web App (PWA) with a standalone app shel
 - On Chromium browsers (Android, Chrome, Edge), the app captures `beforeinstallprompt` and renders an install card triggering the native prompt.
 - On iOS Safari (WebKit), where `beforeinstallprompt` is not supported, the banner automatically detects the platform and provides concise inline guidance ("Tap Share, then 'Add to Home Screen'").
 
-To prevent students from holding stale caches after deployments, the Service Worker keys its Workbox `cacheId` and runtime cache names directly to the Cloudflare Pages commit SHA (`CF_PAGES_COMMIT_SHA`). Deployments automatically invalidate and prune obsolete caches on activation without manual version bumps. API requests use a `NetworkFirst` strategy (5-second timeout) so marketplace availability and transaction statuses remain strictly current.
+To prevent students from holding stale caches after deployments, the Service Worker keys its Workbox `cacheId` and runtime cache names directly to the Cloudflare Pages commit SHA (`CF_PAGES_COMMIT_SHA`). Deployments automatically invalidate and prune obsolete caches on activation without manual version bumps. API caching is limited to public GET `/api/listings`; auth, users, transactions and push routes are never cached, and caches are cleared on logout.
 
 ### Schema migrations
 
@@ -100,9 +100,9 @@ Flyway versioned migrations run at startup, so production schema changes are app
 
 Lease cards show a live countdown and switch to overdue styling when time runs out. A transaction renders different actions and codes depending on whether the viewer is the owner or the borrower. Tested on iOS Safari and Android Chrome.
 
-UniX is fully installable as a standalone PWA on mobile and desktop devices. A smart, non-intrusive install banner detects current display mode, hides permanently if already running standalone, respects session dismissals (`sessionStorage`), and unmounts immediately upon installation.
+UniX is fully installable as a standalone PWA on mobile and desktop devices. A smart, non-intrusive install banner detects current display mode, hides permanently if already running standalone, respects dismissals, and unmounts immediately upon installation.
 
-Styling uses a custom palette called Inception: `#173541` (primary), `#557C86` (slate), `#FAFAF8` (canvas). Inter for text, monospace for verification codes. 39 unit tests cover time formatting, countdown calculations, PWA standalone detection, platform-specific install rules, and push notification utilities (`npm test`).
+Styling uses a custom palette called Inception: `#173541` (primary), `#557C86` (slate), `#FAFAF8` (canvas). Inter for text, monospace for verification codes. 100 unit tests cover time formatting, countdown calculations, PWA standalone detection, platform-specific install rules, label enums, and push notification utilities (`npm test`).
 
 ### Brand identity
 
@@ -134,6 +134,7 @@ Open `http://localhost:5173`. `VITE_API_URL` is the only client-side variable. T
 4. A penalty clock started by one party's unilateral action causes disputes. Requiring confirmation from both sides, with a fallback, was simpler than adding more buttons.
 5. PWA installation behaves differently across mobile browsers. Chromium supports programmatic prompts, but iOS Safari requires inline manual instructions. Using `sessionStorage` instead of `localStorage` allows dismissals without permanently suppressing installation for interested users.
 6. Web push subscriptions are tied to individual browsers, not accounts. Supporting multiple endpoints per user and automatically pruning stale subscriptions on HTTP 410 (Gone) keeps notification delivery reliable across devices.
+7. Inline callbacks and derived objects in `useEffect` deps reset modal state on every parent render; key effects on ids and keep callbacks in refs.
 
 ---
 
