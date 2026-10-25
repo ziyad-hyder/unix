@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { getFriendlyErrorMessage } from '../utils/errors';
 import { formatDateTime, formatDuration } from '../utils/time';
+import { toWhatsAppUrl } from '../utils/phone';
 
 const CATEGORY_FILTERS = [
   { id: 'ALL', label: 'All Items' },
@@ -667,18 +668,25 @@ export default function DashboardPage() {
                             <CountdownBadge req={req} />
 
                             {/* WhatsApp Connect Button (rendered only when phone is returned by API) */}
-                            {req.requester?.phone && (
-                              <a
-                                href={`https://wa.me/${req.requester.phone.replace(/\D/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-tight text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs shrink-0"
-                                title={`Chat with ${req.requester.fullName || 'student'} on WhatsApp`}
-                              >
-                                <MessageCircle className="w-3 h-3 shrink-0" />
-                                <span>WhatsApp</span>
-                              </a>
-                            )}
+                            {req.requester?.phone && (() => {
+                              const waUrl = toWhatsAppUrl(req.requester.phone);
+                              return waUrl ? (
+                                <a
+                                  href={waUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-tight text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs shrink-0"
+                                  title={`Chat with ${req.requester.fullName || 'student'} on WhatsApp`}
+                                >
+                                  <MessageCircle className="w-3 h-3 shrink-0" />
+                                  <span>WhatsApp</span>
+                                </a>
+                              ) : (
+                                <span className="text-[11px] font-mono text-ink-secondary shrink-0">
+                                  {req.requester.phone}
+                                </span>
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -952,18 +960,25 @@ export default function DashboardPage() {
                             <CountdownBadge req={req} />
 
                             {/* WhatsApp Connect Button (rendered only when phone is returned by API) */}
-                            {req.listing?.owner?.phone && (
-                              <a
-                                href={`https://wa.me/${req.listing.owner.phone.replace(/\D/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-tight text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs shrink-0"
-                                title={`Chat with ${req.listing.owner.fullName || 'owner'} on WhatsApp`}
-                              >
-                                <MessageCircle className="w-3 h-3 shrink-0" />
-                                <span>WhatsApp</span>
-                              </a>
-                            )}
+                            {req.listing?.owner?.phone && (() => {
+                              const waUrl = toWhatsAppUrl(req.listing.owner.phone);
+                              return waUrl ? (
+                                <a
+                                  href={waUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-tight text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs shrink-0"
+                                  title={`Chat with ${req.listing.owner.fullName || 'owner'} on WhatsApp`}
+                                >
+                                  <MessageCircle className="w-3 h-3 shrink-0" />
+                                  <span>WhatsApp</span>
+                                </a>
+                              ) : (
+                                <span className="text-[11px] font-mono text-ink-secondary shrink-0">
+                                  {req.listing.owner.phone}
+                                </span>
+                              );
+                            })()}
                           </div>
                         </div>
 

@@ -10,6 +10,7 @@ import {
   unsubscribeFromPush,
   sendTestPush 
 } from '../utils/push';
+import { normalizePhone } from '../utils/phone';
 
 export default function ProfileModal({ isOpen, onClose }) {
   const { user, updateUserPhone } = useAuth();
@@ -129,17 +130,15 @@ export default function ProfileModal({ isOpen, onClose }) {
     setErrorMessage('');
     setSuccessMessage('');
 
-    const cleanPhone = phone.trim();
-
-    // Basic format validation
-    if (cleanPhone && !/^(\+?[0-9\s\-]{7,20})$/.test(cleanPhone)) {
-      setErrorMessage('Please enter a valid phone number (e.g. +91 9876543210 or 9876543210).');
+    const normalizedPhone = normalizePhone(phone);
+    if (!normalizedPhone) {
+      setErrorMessage('Please enter a valid 10-digit mobile number.');
       return;
     }
 
     try {
       setLoading(true);
-      await updateUserPhone(cleanPhone || null);
+      await updateUserPhone(normalizedPhone);
       setSuccessMessage('WhatsApp number updated successfully!');
     } catch (err) {
       setErrorMessage(err.message || 'Failed to update phone number.');
@@ -222,10 +221,13 @@ export default function ProfileModal({ isOpen, onClose }) {
                 autoComplete="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+91 9876543210"
+                placeholder="10-digit mobile number (we add +91)"
                 className="block w-full pl-9 pr-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary transition-colors font-mono font-medium"
               />
             </div>
+            <p className="mt-1 text-[10px] text-ink-secondary">
+              10-digit mobile number (we add +91)
+            </p>
 
             {/* Privacy notice banner */}
             <div className="mt-2.5 p-3 rounded-lg bg-brand-primary/5 border border-brand-secondary/15 flex items-start gap-2 text-[11px] text-ink-secondary leading-relaxed">

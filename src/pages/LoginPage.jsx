@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { UniXLogoMark } from '../components/Navbar';
 import Footer from '../components/Footer';
+import { normalizePhone } from '../utils/phone';
 
 const CAMPUSES = [
   { id: 'kitsw', name: 'KITS Warangal', domain: '@kitsw.ac.in' },
@@ -199,17 +200,15 @@ export default function LoginPage() {
     e.preventDefault();
     resetErrors();
 
-    const cleanPhone = signUpPhone.trim();
-    if (cleanPhone && !/^(\+?[0-9\s\-]{7,20})$/.test(cleanPhone)) {
-      setErrorMessage('Please enter a valid phone number or skip.');
+    const normalizedPhone = normalizePhone(signUpPhone);
+    if (!normalizedPhone) {
+      setErrorMessage('Please enter a valid 10-digit mobile number.');
       return;
     }
 
     try {
       setLoading(true);
-      if (cleanPhone) {
-        await updateUserPhone(cleanPhone);
-      }
+      await updateUserPhone(normalizedPhone);
       navigate('/', { replace: true });
     } catch (err) {
       setErrorMessage(err.message || 'Failed to update phone number.');
@@ -688,10 +687,13 @@ export default function LoginPage() {
                         autoComplete="tel"
                         value={signUpPhone}
                         onChange={(e) => setSignUpPhone(e.target.value)}
-                        placeholder="+91 9876543210"
+                        placeholder="10-digit mobile number (we add +91)"
                         className="block w-full pl-9 pr-3 py-2 text-base sm:text-xs border border-brand-secondary/25 rounded-lg bg-brand-bg/60 text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:border-brand-secondary font-mono font-medium"
                       />
                     </div>
+                    <p className="mt-1 text-[10px] text-ink-secondary">
+                      10-digit mobile number (we add +91)
+                    </p>
                   </div>
 
                   <div className="p-3 rounded-lg bg-brand-primary/5 border border-brand-secondary/15 flex items-start gap-2 text-[11px] text-ink-secondary leading-relaxed">
