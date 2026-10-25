@@ -14,6 +14,7 @@ import {
 import { getFriendlyErrorMessage } from '../utils/errors';
 import { formatDateTime, formatDuration } from '../utils/time';
 import { toWhatsAppUrl } from '../utils/phone';
+import { mergePage } from '../utils/pagination';
 
 const CATEGORY_FILTERS = [
   { id: 'ALL', label: 'All Items' },
@@ -146,6 +147,11 @@ export default function DashboardPage() {
   const [listings, setListings] = useState([]);
   const [listingsLoading, setListingsLoading] = useState(true);
   const [listingsError, setListingsError] = useState(null);
+  const [listingsPage, setListingsPage] = useState(0);
+  const [hasMoreListings, setHasMoreListings] = useState(false);
+  const [totalListings, setTotalListings] = useState(null);
+  const [loadingMoreListings, setLoadingMoreListings] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedListingId, setSelectedListingId] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -203,15 +209,30 @@ export default function DashboardPage() {
 
   // 1. Fetch Listings
   const fetchListings = useCallback(async (opts = {}) => {
-    const silent = Boolean(opts && typeof opts === 'object' && opts.silent === true);
+    const isSyntheticEvent = Boolean(opts && typeof opts === 'object' && ('_reactName' in opts || 'nativeEvent' in opts));
+    const cleanOpts = isSyntheticEvent ? {} : opts;
+
+    const pageToFetch = typeof cleanOpts.page === 'number' ? cleanOpts.page : 0;
+    const isAppend = pageToFetch > 0;
+    const silent = Boolean(cleanOpts.silent);
+
     const requestId = ++listingsRequestIdRef.current;
 
     try {
-      if (!silent) {
+      if (isAppend) {
+        setLoadingMoreListings(true);
+        setLoadMoreError(null);
+      } else if (!silent) {
         setListingsLoading(true);
         setListingsError(null);
+        setLoadMoreError(null);
       }
-      const params = { status: 'ACTIVE' };
+
+      const params = {
+        status: 'ACTIVE',
+        page: pageToFetch,
+        size: 20,
+      };
       if (selectedCategory !== 'ALL') params.category = selectedCategory;
       if (selectedType !== 'ALL') params.type = selectedType;
 
@@ -219,21 +240,44 @@ export default function DashboardPage() {
       if (requestId !== listingsRequestIdRef.current) return;
 
       if (res.data?.success && res.data?.data) {
-        setListings(res.data.data.content || []);
+        const pageData = res.data.data;
+        const newItems = pageData.content || [];
+
+        if (isAppend) {
+          setListings((prev) => mergePage(prev, newItems));
+        } else {
+          setListings(newItems);
+        }
+
+        setListingsPage(pageToFetch);
+        setHasMoreListings(!pageData.last);
+        setTotalListings(pageData.totalElements ?? null);
         lastListingsFetchTimeRef.current = Date.now();
       }
     } catch (err) {
       if (requestId !== listingsRequestIdRef.current) return;
       console.error('Failed to fetch listings:', err);
-      if (!silent) {
-        setListingsError(getFriendlyErrorMessage(err, "Can't reach the server. Check your connection and try again."));
+      const friendlyErr = getFriendlyErrorMessage(err, "Can't reach the server. Check your connection and try again.");
+      if (isAppend) {
+        setLoadMoreError(friendlyErr);
+      } else if (!silent) {
+        setListingsError(friendlyErr);
       }
     } finally {
-      if (requestId === listingsRequestIdRef.current && !silent) {
-        setListingsLoading(false);
+      if (requestId === listingsRequestIdRef.current) {
+        if (isAppend) {
+          setLoadingMoreListings(false);
+        } else if (!silent) {
+          setListingsLoading(false);
+        }
       }
     }
   }, [selectedCategory, selectedType]);
+
+  const handleLoadMore = () => {
+    if (loadingMoreListings || !hasMoreListings) return;
+    fetchListings({ page: listingsPage + 1 });
+  };
 
   // 2. Fetch My Transactions
   const fetchTransactions = useCallback(async (opts = {}) => {
@@ -551,6 +595,22 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Search hint when more listings are available on the server */}
+            {hasMoreListings && searchQuery.trim() && (
+              <div className="p-3 rounded-lg bg-brand-primary/5 border border-brand-secondary/20 text-xs text-ink-secondary flex items-center justify-between gap-3">
+                <span>Searching loaded listings only. Load more to search further.</span>
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={loadingMoreListings}
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-brand-primary text-white text-xs font-semibold hover:bg-brand-secondary active:bg-brand-primary transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
+                >
+                  {loadingMoreListings && <RefreshCw className="w-3 h-3 animate-spin" />}
+                  <span>Load more</span>
+                </button>
+              </div>
+            )}
+
             {/* Small error line when data was already loaded and a refresh failed */}
             {listingsError && listings.length > 0 && (
               <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800 flex items-center justify-between">
@@ -623,15 +683,63 @@ export default function DashboardPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredListings.map((item) => (
-                  <ListingCard
-                    key={item.id}
-                    listing={item}
-                    onClick={() => setSelectedListingId(item.id)}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredListings.map((item) => (
+                    <ListingCard
+                      key={item.id}
+                      listing={item}
+                      onClick={() => setSelectedListingId(item.id)}
+                    />
+                  ))}
+                </div>
+
+                {/* Inline error for failed Load more */}
+                {loadMoreError && (
+                  <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                      <span>{loadMoreError}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fetchListings({ page: listingsPage + 1 })}
+                      className="inline-flex items-center gap-1 font-semibold text-brand-primary hover:underline cursor-pointer ml-3 shrink-0"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Retry</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Load More Button */}
+                {hasMoreListings && !loadMoreError && (
+                  <div className="mt-6 text-center">
+                    <button
+                      type="button"
+                      onClick={handleLoadMore}
+                      disabled={loadingMoreListings}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-brand-secondary/30 bg-white text-xs font-bold text-ink-primary hover:bg-brand-primary/5 active:bg-brand-primary/10 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                    >
+                      {loadingMoreListings ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-brand-secondary" />
+                          <span>Loading more...</span>
+                        </>
+                      ) : (
+                        <span>Load More Listings</span>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* Showing N of M */}
+                {totalListings != null && (
+                  <p className="mt-4 text-center text-xs text-ink-secondary">
+                    Showing {filteredListings.length} of {totalListings}
+                  </p>
+                )}
+              </>
             )}
           </div>
         )}
