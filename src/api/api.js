@@ -34,12 +34,37 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+let hasDispatchedUnauthorized = false;
+
+export const resetUnauthorizedGuard = () => {
+  hasDispatchedUnauthorized = false;
+};
+
 // Response interceptor: Extract structured backend error & clear token on 401
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const url = response.config?.url || '';
+    if (url.includes('/api/auth/login') || url.includes('/api/auth/register')) {
+      hasDispatchedUnauthorized = false;
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('unix_token');
+
+      const url = error.config?.url || '';
+      const isExcluded =
+        url.includes('/api/auth/login') ||
+        url.includes('/api/auth/register') ||
+        url.includes('/api/auth/me');
+
+      if (!isExcluded && !hasDispatchedUnauthorized) {
+        hasDispatchedUnauthorized = true;
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('unix:unauthorized'));
+        }
+      }
     }
 
     if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {

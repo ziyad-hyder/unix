@@ -1,11 +1,35 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api from '../api/api';
+import api, { resetUnauthorizedGuard } from '../api/api';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const clearApiCaches = async () => {
+    if (typeof window !== 'undefined' && 'caches' in window) {
+      try {
+        const keys = await window.caches.keys();
+        await Promise.all(
+          keys
+            .filter((k) => k.startsWith('unix-api-'))
+            .map((k) => window.caches.delete(k))
+        );
+      } catch (err) {
+        console.warn('Failed to delete window caches:', err);
+      }
+    }
+    if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_API_CACHES' });
+    }
+  };
+
+  const forcedLogout = useCallback(async () => {
+    localStorage.removeItem('unix_token');
+    setUser(null);
+    await clearApiCaches();
+  }, []);
 
   // Hydrate auth state by calling /api/auth/me
   const checkAuth = useCallback(async () => {
@@ -15,23 +39,39 @@ export const AuthProvider = ({ children }) => {
       if (res.data?.success && res.data?.data) {
         setUser(res.data.data);
       } else {
-        localStorage.removeItem('unix_token');
-        setUser(null);
+        await forcedLogout();
       }
     } catch {
-      localStorage.removeItem('unix_token');
-      setUser(null);
+      await forcedLogout();
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [forcedLogout]);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
+  // Listen for unauthorized events dispatched by API interceptor
+  useEffect(() => {
+    const handleUnauthorized = async () => {
+      try {
+        sessionStorage.setItem('unix_session_expired', '1');
+      } catch {
+        // ignore storage errors
+      }
+      await forcedLogout();
+    };
+
+    window.addEventListener('unix:unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('unix:unauthorized', handleUnauthorized);
+    };
+  }, [forcedLogout]);
+
   // 1. Password Login (Returning Users)
   const login = async (rollNumber, password) => {
+    resetUnauthorizedGuard();
     const res = await api.post('/api/auth/login', {
       rollNumber,
       password,
@@ -67,6 +107,7 @@ export const AuthProvider = ({ children }) => {
 
   // 4. Registration Step 3: Confirm OTP & Set Password
   const registerConfirm = async (rollNumber, email, fullName, otp, rawPassword) => {
+    resetUnauthorizedGuard();
     const res = await api.post('/api/auth/register/confirm', {
       rollNumber,
       email,
@@ -91,8 +132,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.warn('Logout API error:', err);
     } finally {
-      localStorage.removeItem('unix_token');
-      setUser(null);
+      await forcedLogout();
     }
   };
 

@@ -41,10 +41,18 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
   const [cooldown, setCooldown] = useState(0);
 
   const selectedLoginCampus = CAMPUSES.find((c) => c.id === loginCampus) || CAMPUSES[0];
   const selectedSignUpCampus = CAMPUSES.find((c) => c.id === signUpCampus) || CAMPUSES[0];
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('unix_session_expired')) {
+      setInfoMessage('Your session expired. Please sign in again.');
+      sessionStorage.removeItem('unix_session_expired');
+    }
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && signUpStep !== 4) {
@@ -63,6 +71,7 @@ export default function LoginPage() {
   const resetErrors = () => {
     setErrorMessage('');
     setSuccessMessage('');
+    setInfoMessage('');
   };
 
   // 1. Handle Sign In (Password)
@@ -260,6 +269,13 @@ export default function LoginPage() {
           </div>
 
           {/* Notifications */}
+          {infoMessage && (
+            <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-blue-600" />
+              <span>{infoMessage}</span>
+            </div>
+          )}
+
           {errorMessage && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
