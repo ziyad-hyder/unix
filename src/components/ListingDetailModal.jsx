@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { getFriendlyErrorMessage } from '../utils/errors';
 import { formatDateTime, formatDuration } from '../utils/time';
+import { AUTO_START_HOURS, FREEZE_AFTER_OVERDUE_HOURS } from '../utils/policy';
 
 const CATEGORIES = [
   { value: 'CALCULATOR', label: 'Scientific Calculator (fx-991CW / ES)' },
@@ -416,10 +417,10 @@ export default function ListingDetailModal({
                         <span>Rental Terms and Due Date Policy</span>
                       </div>
                       <p className="text-[11px] text-ink-secondary leading-relaxed">
-                        The lease clock starts when you confirm physical receipt of the item (or automatically after {formatDuration(12 * 3600 * 1000)} of handover). The item must be returned within the {listing.rentalPeriod ? listing.rentalPeriod.toLowerCase() : 'agreed'} period.
+                        The lease clock starts when you confirm physical receipt of the item (or automatically after {formatDuration(AUTO_START_HOURS * 3600 * 1000)} of handover). The item must be returned within the {listing.rentalPeriod ? listing.rentalPeriod.toLowerCase() : 'agreed'} period.
                       </p>
                       <div className="pt-1.5 border-t border-brand-secondary/15 text-[11px] text-ink-secondary leading-relaxed">
-                        <span className="font-semibold text-red-700">Important:</span> Items overdue by more than {formatDuration(72 * 3600 * 1000)} will freeze your account, which blocks new requests until the item is returned.
+                        <span className="font-semibold text-red-700">Important:</span> Items overdue by more than {formatDuration(FREEZE_AFTER_OVERDUE_HOURS * 3600 * 1000)} will freeze your account, which blocks new requests until the item is returned.
                       </div>
                     </div>
                   )}

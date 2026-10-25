@@ -16,6 +16,7 @@ import { getFriendlyErrorMessage } from '../utils/errors';
 import { formatDateTime, formatDuration } from '../utils/time';
 import { toWhatsAppUrl } from '../utils/phone';
 import { mergePage } from '../utils/pagination';
+import { AUTO_START_HOURS, AUTO_COMPLETE_HOURS } from '../utils/policy';
 
 const CATEGORY_FILTERS = [
   { id: 'ALL', label: 'All Items' },
@@ -474,7 +475,7 @@ export default function DashboardPage() {
       case 'REJECT':
         return {
           title: 'Reject Request',
-          message: 'Are you sure you want to reject this request? The student will be notified and the item will remain available to others.',
+          message: 'Are you sure you want to reject this request? The request will be declined and the item will remain available to others.',
           confirmLabel: 'Reject Request',
           cancelLabel: 'Keep Request',
           danger: true,
@@ -496,7 +497,7 @@ export default function DashboardPage() {
       case 'MANUAL_HANDOVER_OWNER':
         return {
           title: 'Record Manual Handover',
-          message: 'Mark this item as handed over without a verification code?\n\nThe borrower must confirm receipt before the lease becomes active. Unconfirmed manual handovers do not penalize either account.',
+          message: `Mark this item as handed over without a verification code?\n\nThe lease clock starts when the borrower confirms receipt, or automatically after ${AUTO_START_HOURS} hours. Unconfirmed manual handovers do not penalize either account.`,
           confirmLabel: 'Record Handover',
           cancelLabel: 'Cancel',
           danger: false,
@@ -505,7 +506,7 @@ export default function DashboardPage() {
       case 'MANUAL_RECEIPT_BORROWER':
         return {
           title: 'Confirm Receipt Manually',
-          message: 'Confirm that you have physically received this item from the owner without using a code?\n\nThis will immediately activate the rental lease clock.',
+          message: `Confirm that you have physically received this item from the owner without using a code?\n\nThis will immediately start your lease clock instead of waiting for the ${AUTO_START_HOURS}-hour auto-start window.`,
           confirmLabel: 'Confirm Receipt',
           cancelLabel: 'Cancel',
           danger: false,
@@ -523,7 +524,7 @@ export default function DashboardPage() {
       case 'MANUAL_RETURN_BORROWER':
         return {
           title: 'Declare Manual Return',
-          message: 'Mark this item as returned without an owner verification code?\n\nThe owner must confirm receipt to complete the transaction. Unconfirmed manual returns do not penalize either account.',
+          message: `Mark this item as returned without an owner verification code?\n\nThe transaction completes when the owner confirms receipt, or automatically after ${AUTO_COMPLETE_HOURS} hours. Unconfirmed manual returns do not penalize either account.`,
           confirmLabel: 'Declare Return',
           cancelLabel: 'Cancel',
           danger: false,
@@ -541,7 +542,7 @@ export default function DashboardPage() {
       case 'DISPUTE':
         return {
           title: 'Dispute Return',
-          message: 'Report an issue with this return? This will suspend automatic completion and flag the transaction for resolution.',
+          message: 'Report an issue with this return? This will suspend automatic completion and flag the transaction as disputed.',
           confirmLabel: 'Dispute Return',
           cancelLabel: 'Cancel',
           danger: true,
@@ -1489,7 +1490,7 @@ export default function DashboardPage() {
                             ) : (
                               <span className="text-emerald-800 font-semibold flex items-center gap-1 text-xs">
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Return declared. Awaiting owner confirmation (auto-completes in 48h).</span>
+                                <span>Return declared. Awaiting owner confirmation (auto-completes in {AUTO_COMPLETE_HOURS}h).</span>
                               </span>
                             )}
                           </div>

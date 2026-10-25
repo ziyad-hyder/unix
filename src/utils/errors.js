@@ -1,4 +1,5 @@
 import { formatDuration } from './time';
+import { FREEZE_AFTER_OVERDUE_HOURS, CODE_LOCK_MINUTES } from './policy';
 
 /**
  * Central Error Code Mapping & Sanitizer for UniX Frontend
@@ -6,9 +7,9 @@ import { formatDuration } from './time';
  */
 
 export const ERROR_CODE_MAP = {
-  ACCOUNT_FROZEN: 'Items overdue by more than 3 days will freeze your account, which blocks new requests until the item is returned.',
+  ACCOUNT_FROZEN: `Items overdue by more than ${formatDuration(FREEZE_AFTER_OVERDUE_HOURS * 3600 * 1000)} will freeze your account, which blocks new requests until the item is returned.`,
   INVALID_CODE: 'Invalid verification code. Please check the 6-digit code and try again.',
-  CODE_LOCKED: 'Too many incorrect attempts. Try again in 10 minutes.',
+  CODE_LOCKED: `Too many incorrect attempts. Try again in ${CODE_LOCK_MINUTES} minutes.`,
   IN_FLIGHT_TRANSACTION: 'Cannot modify or delete this item because an active transaction is currently in progress.',
   ILLEGAL_TRANSITION: 'This transaction action cannot be performed in its current status.',
   PHONE_REQUIRED: 'A phone number is required on your profile before requesting or accepting transactions.',
