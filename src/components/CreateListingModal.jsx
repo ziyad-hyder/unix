@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import api from '../api/api';
 import { compressImage } from '../utils/imageUtils';
 import { X, PlusCircle, AlertCircle, RefreshCw, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
+import useModalA11y from '../hooks/useModalA11y';
+import ConfirmDialog from './ConfirmDialog';
 
 const CATEGORIES = [
   { value: 'CALCULATOR', label: 'Scientific Calculator (fx-991CW / ES)' },
@@ -38,17 +40,36 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
-  // Close modal on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
+  const hasUnsavedInput = Boolean(
+    title.trim() ||
+    description.trim() ||
+    price.trim() ||
+    rentalRate.trim() ||
+    depositAmount.trim() ||
+    swapPreferences.trim() ||
+    imageFile ||
+    category !== CATEGORIES[0].value ||
+    type !== 'RENT' ||
+    rentalPeriod !== RENTAL_PERIODS[3].value
+  );
+
+  const handleRequestClose = () => {
+    if (loading || imageLoading) return;
+    if (hasUnsavedInput) {
+      setShowDiscardConfirm(true);
+    } else {
+      resetForm();
+      onClose();
     }
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  };
+
+  const modalRef = useModalA11y(
+    isOpen && !showDiscardConfirm,
+    handleRequestClose,
+    { closeOnEscape: !loading && !imageLoading }
+  );
 
   if (!isOpen) return null;
 
@@ -155,26 +176,44 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget && !loading && !imageLoading) {
+      handleRequestClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-primary/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-lg border border-brand-secondary/25 overflow-hidden relative animate-in fade-in zoom-in-95 duration-150">
-        
-        {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-brand-secondary/15 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-brand-primary/10 text-brand-primary flex items-center justify-center">
-              <PlusCircle className="w-4 h-4" />
+    <>
+      <div
+        onClick={handleBackdropClick}
+        className="fixed inset-0 z-50 overflow-y-auto bg-brand-primary/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+      >
+        <div
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-listing-title"
+          className="bg-white w-full max-w-lg rounded-2xl shadow-lg border border-brand-secondary/25 overflow-hidden relative animate-in fade-in zoom-in-95 duration-150"
+        >
+          
+          {/* Modal Header */}
+          <div className="px-6 py-4 border-b border-brand-secondary/15 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-brand-primary/10 text-brand-primary flex items-center justify-center">
+                <PlusCircle className="w-4 h-4" />
+              </div>
+              <h2 id="create-listing-title" className="text-base font-bold text-ink-primary">List an Item on UniX</h2>
             </div>
-            <h2 className="text-base font-bold text-ink-primary">List an Item on UniX</h2>
+            <button
+              type="button"
+              onClick={handleRequestClose}
+              disabled={loading || imageLoading}
+              className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Close modal"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer"
-            aria-label="Close modal"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
@@ -427,17 +466,17 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
           <div className="pt-3 border-t border-brand-secondary/15 flex items-center justify-end gap-2.5">
             <button
               type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-3.5 py-2 text-xs font-semibold text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 rounded-lg transition-colors"
+              onClick={handleRequestClose}
+              disabled={loading || imageLoading}
+              className="px-3.5 py-2 text-xs font-semibold text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              disabled={loading}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 transition-colors"
+              disabled={loading || imageLoading}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary active:bg-brand-primary disabled:opacity-50 transition-colors cursor-pointer"
             >
               {loading ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -450,6 +489,23 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
         </form>
       </div>
     </div>
+
+    {/* Discard Confirmation Dialog */}
+    <ConfirmDialog
+      open={showDiscardConfirm}
+      title="Discard this listing?"
+      message="You have unsaved changes in this listing draft. Are you sure you want to discard them?"
+      confirmLabel="Discard"
+      cancelLabel="Keep Editing"
+      danger={true}
+      onConfirm={() => {
+        setShowDiscardConfirm(false);
+        resetForm();
+        onClose();
+      }}
+      onCancel={() => setShowDiscardConfirm(false)}
+    />
+  </>
   );
 }
 

@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { RefreshCw } from 'lucide-react';
+import useModalA11y from '../hooks/useModalA11y';
 
 export default function ConfirmDialog({
   open,
@@ -12,85 +13,11 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }) {
-  const dialogRef = useRef(null);
   const cancelBtnRef = useRef(null);
-  const triggerRef = useRef(null);
-
-  // Focus management & scroll lock
-  useEffect(() => {
-    if (open) {
-      // Save previously focused element to return focus when dialog closes
-      triggerRef.current = document.activeElement;
-
-      // Lock body scroll
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-
-      // Focus Cancel button on open (next tick to ensure DOM is ready)
-      const focusTimer = setTimeout(() => {
-        cancelBtnRef.current?.focus();
-      }, 0);
-
-      return () => {
-        clearTimeout(focusTimer);
-        document.body.style.overflow = originalOverflow;
-        // Return focus to the trigger element
-        if (triggerRef.current && typeof triggerRef.current.focus === 'function') {
-          triggerRef.current.focus();
-        }
-      };
-    }
-  }, [open]);
-
-  // Keyboard navigation: Escape to cancel & Tab trapping
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        if (!loading && onCancel) {
-          e.preventDefault();
-          onCancel();
-        }
-        return;
-      }
-
-      if (e.key === 'Tab') {
-        if (!dialogRef.current) return;
-
-        const focusableElements = dialogRef.current.querySelectorAll(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        );
-
-        if (focusableElements.length === 0) {
-          e.preventDefault();
-          return;
-        }
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-
-        if (e.shiftKey) {
-          // Backward tab
-          if (document.activeElement === firstElement || !dialogRef.current.contains(document.activeElement)) {
-            e.preventDefault();
-            lastElement.focus();
-          }
-        } else {
-          // Forward tab
-          if (document.activeElement === lastElement || !dialogRef.current.contains(document.activeElement)) {
-            e.preventDefault();
-            firstElement.focus();
-          }
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open, loading, onCancel]);
+  const dialogRef = useModalA11y(open, onCancel, {
+    closeOnEscape: !loading,
+    initialFocusRef: cancelBtnRef,
+  });
 
   if (!open) return null;
 

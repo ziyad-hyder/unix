@@ -25,8 +25,16 @@ export default function ListingCard({ listing, onClick }) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="bg-white rounded-xl border border-brand-secondary/20 p-5 hover:border-brand-tertiary transition-colors flex flex-col justify-between h-full group cursor-pointer text-left overflow-hidden"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      className="bg-white rounded-xl border border-brand-secondary/20 p-5 hover:border-brand-tertiary transition-colors flex flex-col justify-between h-full group cursor-pointer text-left overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
     >
       <div>
         {/* Optional Listing Image */}

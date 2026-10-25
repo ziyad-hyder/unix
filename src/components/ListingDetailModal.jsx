@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
+import useModalA11y from '../hooks/useModalA11y';
 import { 
   X, CheckCircle2, AlertCircle, RefreshCw, Send, User, 
   Edit3, Trash2, ArrowLeft, Save, AlertTriangle, Clock 
@@ -53,21 +54,7 @@ export default function ListingDetailModal({
   const [editDepositAmount, setEditDepositAmount] = useState('');
   const [editSwapPreferences, setEditSwapPreferences] = useState('');
 
-  // Keep onClose in a ref for Escape handler so it doesn't re-subscribe on every render
-  const onCloseRef = useRef(onClose);
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onCloseRef.current?.();
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isOpen]);
+  const modalRef = useModalA11y(isOpen, onClose, { closeOnEscape: !loading });
 
   // Reset effect: depends ONLY on [isOpen, listing?.id]
   useEffect(() => {
@@ -238,9 +225,24 @@ export default function ListingDetailModal({
 
 
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget && !loading) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-primary/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-lg border border-brand-secondary/25 overflow-hidden relative animate-in fade-in zoom-in-95 duration-150">
+    <div
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 overflow-y-auto bg-brand-primary/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+    >
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="listing-detail-title"
+        className="bg-white w-full max-w-lg rounded-2xl shadow-lg border border-brand-secondary/25 overflow-hidden relative animate-in fade-in zoom-in-95 duration-150"
+      >
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-brand-secondary/15 flex items-center justify-between">
@@ -264,10 +266,10 @@ export default function ListingDetailModal({
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </button>
-                <h3 className="text-sm font-bold text-ink-primary">Edit Listing</h3>
+                <h3 id="listing-detail-title" className="text-sm font-bold text-ink-primary">Edit Listing</h3>
               </div>
             ) : (
-              <h3 className="text-sm font-bold text-red-600 flex items-center gap-1.5">
+              <h3 id="listing-detail-title" className="text-sm font-bold text-red-600 flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4" />
                 <span>Confirm Deletion</span>
               </h3>
@@ -276,7 +278,8 @@ export default function ListingDetailModal({
 
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer"
+            disabled={loading}
+            className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Close modal"
           >
             <X className="w-4 h-4" />
@@ -323,7 +326,7 @@ export default function ListingDetailModal({
             )}
 
             <div>
-              <h2 className="text-lg font-bold text-ink-primary leading-snug">
+              <h2 id="listing-detail-title" className="text-lg font-bold text-ink-primary leading-snug">
                 {listing.title}
               </h2>
               <p className="mt-2.5 text-xs text-ink-primary leading-relaxed whitespace-pre-line bg-brand-bg/60 p-3.5 rounded-xl border border-brand-secondary/15">

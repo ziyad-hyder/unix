@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import useModalA11y from '../hooks/useModalA11y';
 import { 
   X, User, Phone, CheckCircle2, AlertCircle, 
   Save, RefreshCw, MessageSquare, Bell, BellRing 
@@ -62,16 +63,7 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
   }, [checkPush]);
 
   const prevIsOpenRef = useRef(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onCloseRef.current?.();
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isOpen]);
+  const modalRef = useModalA11y(isOpen, onClose, { closeOnEscape: !loading && !pushActionLoading });
 
   // Seed phone and clear messages ONLY when isOpen flips false -> true
   useEffect(() => {
@@ -150,9 +142,24 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget && !loading && !pushActionLoading) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-primary/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-lg border border-brand-secondary/25 overflow-hidden relative animate-in fade-in zoom-in-95 duration-150">
+    <div
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 overflow-y-auto bg-brand-primary/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+    >
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profile-modal-title"
+        className="bg-white w-full max-w-md rounded-2xl shadow-lg border border-brand-secondary/25 overflow-hidden relative animate-in fade-in zoom-in-95 duration-150"
+      >
         
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-brand-secondary/15 flex items-center justify-between">
@@ -160,11 +167,12 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
             <div className="w-8 h-8 rounded-lg bg-brand-primary/10 text-brand-primary flex items-center justify-center">
               <User className="w-4 h-4" />
             </div>
-            <h2 className="text-base font-bold text-ink-primary">Student Profile</h2>
+            <h2 id="profile-modal-title" className="text-base font-bold text-ink-primary">Student Profile</h2>
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer"
+            disabled={loading || pushActionLoading}
+            className="w-10 h-10 rounded-lg text-ink-secondary hover:text-ink-primary hover:bg-brand-primary/5 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Close modal"
           >
             <X className="w-4 h-4" />
