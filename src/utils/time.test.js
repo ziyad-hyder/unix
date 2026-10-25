@@ -43,9 +43,14 @@ describe('time.js test suite', () => {
       assert.strictEqual(formatDuration(ms), '7 days');
     });
 
-    test('1 day (when hours = 0)', () => {
+    test('exactly 24h shows 1 day', () => {
       const ms = 24 * 60 * 60 * 1000;
       assert.strictEqual(formatDuration(ms), '1 day');
+    });
+
+    test('23h10m shows hours and minutes (not rounded to 1 day)', () => {
+      const ms = (23 * 60 + 10) * 60 * 1000;
+      assert.strictEqual(formatDuration(ms), '23 hours 10 minutes');
     });
 
     test('1 day 1 hour', () => {

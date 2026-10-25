@@ -75,9 +75,10 @@ export function formatDuration(ms) {
     return `${mins} ${mins === 1 ? 'minute' : 'minutes'}`;
   }
 
-  // Check if total duration rounds up to 24 hours or more
-  const totalHours = Math.ceil(ms / 3600000);
-  if (totalHours >= 24) {
+  // Check if total duration is 24 hours or more
+  const DAY_MS = 24 * 3600000;
+  if (ms >= DAY_MS) {
+    const totalHours = Math.ceil(ms / 3600000);
     const days = Math.floor(totalHours / 24);
     const hours = totalHours % 24;
     const dayStr = `${days} ${days === 1 ? 'day' : 'days'}`;

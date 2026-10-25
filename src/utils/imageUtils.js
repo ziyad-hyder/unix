@@ -37,6 +37,10 @@ export async function compressImage(file, maxWidth = 800, quality = 0.7) {
           return reject(new Error('Canvas context not available'));
         }
 
+        // Fill canvas with white background so transparent PNGs don't turn black in JPEG
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, width, height);
+
         // Draw image onto canvas
         ctx.drawImage(img, 0, 0, width, height);
 
