@@ -7,6 +7,7 @@ import CreateListingModal from '../components/CreateListingModal';
 import ListingDetailModal from '../components/ListingDetailModal';
 import ProfileModal from '../components/ProfileModal';
 import Footer from '../components/Footer';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { 
   PlusCircle, CheckCircle2, Search, PackageOpen, 
   Layers, ArrowLeftRight, Check, X, Clock, User, AlertCircle, RefreshCw, MessageCircle 
@@ -189,6 +190,12 @@ export default function DashboardPage() {
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
   const [codeInputs, setCodeInputs] = useState({});
+  const [confirmState, setConfirmState] = useState(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  useEffect(() => {
+    setConfirmState(null);
+  }, [activeTab]);
 
   const handleCodeInputChange = (transactionId, value) => {
     setCodeInputs((prev) => ({
@@ -450,6 +457,136 @@ export default function DashboardPage() {
     }
   };
 
+  const getConfirmDialogConfig = (state) => {
+    if (!state || !state.type) {
+      return {
+        title: 'Confirm Action',
+        message: 'Are you sure you want to proceed?',
+        confirmLabel: 'Confirm',
+        cancelLabel: 'Cancel',
+        danger: false,
+      };
+    }
+
+    const { type, request } = state;
+
+    switch (type) {
+      case 'REJECT':
+        return {
+          title: 'Reject Request',
+          message: 'Are you sure you want to reject this request? The student will be notified and the item will remain available to others.',
+          confirmLabel: 'Reject Request',
+          cancelLabel: 'Keep Request',
+          danger: true,
+        };
+
+      case 'CANCEL': {
+        const isAccepted = request?.status === 'ACCEPTED';
+        return {
+          title: isAccepted ? 'Cancel Accepted Request' : 'Cancel Request',
+          message: isAccepted
+            ? 'Are you sure you want to cancel this request?\n\nThis request was already accepted by the owner. Please let them know if your plans changed.'
+            : 'Are you sure you want to cancel your request for this item?',
+          confirmLabel: 'Cancel Request',
+          cancelLabel: 'Keep Request',
+          danger: true,
+        };
+      }
+
+      case 'MANUAL_HANDOVER_OWNER':
+        return {
+          title: 'Record Manual Handover',
+          message: 'Mark this item as handed over without a verification code?\n\nThe borrower must confirm receipt before the lease becomes active. Unconfirmed manual handovers do not penalize either account.',
+          confirmLabel: 'Record Handover',
+          cancelLabel: 'Cancel',
+          danger: false,
+        };
+
+      case 'MANUAL_RECEIPT_BORROWER':
+        return {
+          title: 'Confirm Receipt Manually',
+          message: 'Confirm that you have physically received this item from the owner without using a code?\n\nThis will immediately activate the rental lease clock.',
+          confirmLabel: 'Confirm Receipt',
+          cancelLabel: 'Cancel',
+          danger: false,
+        };
+
+      case 'COMPLETE_EXCHANGE':
+        return {
+          title: 'Complete Exchange',
+          message: 'Confirm that you and the peer have met and completed the exchange? This will close the transaction.',
+          confirmLabel: 'Complete Exchange',
+          cancelLabel: 'Cancel',
+          danger: false,
+        };
+
+      case 'MANUAL_RETURN_BORROWER':
+        return {
+          title: 'Declare Manual Return',
+          message: 'Mark this item as returned without an owner verification code?\n\nThe owner must confirm receipt to complete the transaction. Unconfirmed manual returns do not penalize either account.',
+          confirmLabel: 'Declare Return',
+          cancelLabel: 'Cancel',
+          danger: false,
+        };
+
+      case 'CONFIRM_RETURN':
+        return {
+          title: 'Confirm Return',
+          message: 'Confirm that the item has been returned to you in acceptable condition? This will mark the rental as completed.',
+          confirmLabel: 'Confirm Return',
+          cancelLabel: 'Cancel',
+          danger: false,
+        };
+
+      case 'DISPUTE':
+        return {
+          title: 'Dispute Return',
+          message: 'Report an issue with this return? This will suspend automatic completion and flag the transaction for resolution.',
+          confirmLabel: 'Dispute Return',
+          cancelLabel: 'Cancel',
+          danger: true,
+        };
+
+      default:
+        return {
+          title: 'Confirm Action',
+          message: 'Are you sure you want to proceed?',
+          confirmLabel: 'Confirm',
+          cancelLabel: 'Cancel',
+          danger: false,
+        };
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmState) return;
+    const { type, request } = confirmState;
+    setConfirmLoading(true);
+
+    try {
+      if (type === 'REJECT') {
+        await handleUpdateStatus(request.id, 'REJECTED');
+      } else if (type === 'CANCEL') {
+        await handleAction(request.id, 'cancel', 'Request cancelled.');
+      } else if (type === 'MANUAL_HANDOVER_OWNER') {
+        await handleAction(request.id, 'handoff', 'Handover recorded. Waiting for borrower to confirm receipt.');
+      } else if (type === 'MANUAL_RECEIPT_BORROWER') {
+        await handleAction(request.id, 'confirm-receipt', 'Receipt confirmed. Lease clock is now active.');
+      } else if (type === 'MANUAL_RETURN_BORROWER') {
+        await handleAction(request.id, 'return', 'Item marked as returned. Waiting for owner confirmation.');
+      } else if (type === 'COMPLETE_EXCHANGE') {
+        await handleAction(request.id, 'complete', 'Transaction marked as completed.');
+      } else if (type === 'CONFIRM_RETURN') {
+        await handleAction(request.id, 'confirm-return', 'Return confirmed. Transaction completed.');
+      } else if (type === 'DISPUTE') {
+        await handleAction(request.id, 'dispute', 'Return disputed. Auto-completion suspended.');
+      }
+    } finally {
+      setConfirmLoading(false);
+      setConfirmState(null);
+    }
+  };
+
   // Pre-calculated requested listing IDs across all active stages
   const requestedListingIds = new Set(
     outgoingRequests
@@ -467,6 +604,8 @@ export default function DashboardPage() {
   });
 
 
+
+  const confirmDialogConfig = getConfirmDialogConfig(confirmState);
 
   return (
     <div className="min-h-screen bg-brand-bg flex flex-col">
@@ -939,7 +1078,7 @@ export default function DashboardPage() {
                         {req.status === 'PENDING' && (
                           <div className="flex items-center justify-end gap-2 flex-wrap">
                             <button
-                              onClick={() => handleUpdateStatus(req.id, 'REJECTED')}
+                              onClick={() => setConfirmState({ type: 'REJECT', request: req })}
                               disabled={actionLoadingId === req.id}
                               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors cursor-pointer disabled:opacity-50"
                             >
@@ -999,11 +1138,7 @@ export default function DashboardPage() {
                                   <span className="text-[10px] text-ink-secondary">Can't use a code?</span>
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      if (window.confirm("Mark item as handed over without a verification code? Note: A manual handover that the other person does not confirm will not count against anyone's account.")) {
-                                        handleAction(req.id, 'handoff', 'Handover recorded. Waiting for borrower to confirm receipt.');
-                                      }
-                                    }}
+                                    onClick={() => setConfirmState({ type: 'MANUAL_HANDOVER_OWNER', request: req })}
                                     disabled={actionLoadingId === req.id}
                                     className="text-[11px] font-medium text-brand-secondary hover:text-brand-primary underline cursor-pointer disabled:opacity-50"
                                   >
@@ -1026,7 +1161,7 @@ export default function DashboardPage() {
                               Meet peer and complete exchange.
                             </span>
                             <button
-                              onClick={() => handleAction(req.id, 'complete', 'Transaction marked as completed.')}
+                              onClick={() => setConfirmState({ type: 'COMPLETE_EXCHANGE', request: req })}
                               disabled={actionLoadingId === req.id}
                               className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary transition-colors cursor-pointer disabled:opacity-50 w-full sm:w-auto"
                             >
@@ -1072,7 +1207,7 @@ export default function DashboardPage() {
                           <div className="flex items-center justify-end gap-2 flex-wrap">
                             {!req.disputed && (
                               <button
-                                onClick={() => handleAction(req.id, 'dispute', 'Return disputed. Auto-completion suspended.')}
+                                onClick={() => setConfirmState({ type: 'DISPUTE', request: req })}
                                 disabled={actionLoadingId === req.id}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 transition-colors cursor-pointer disabled:opacity-50"
                               >
@@ -1080,7 +1215,7 @@ export default function DashboardPage() {
                               </button>
                             )}
                             <button
-                              onClick={() => handleAction(req.id, 'confirm-return', 'Return confirmed. Transaction completed.')}
+                              onClick={() => setConfirmState({ type: 'CONFIRM_RETURN', request: req })}
                               disabled={actionLoadingId === req.id}
                               className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-tight text-xs font-semibold text-white bg-brand-primary hover:bg-brand-secondary transition-colors cursor-pointer disabled:opacity-50"
                             >
@@ -1232,7 +1367,7 @@ export default function DashboardPage() {
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <span className="text-[11px] text-ink-secondary">Waiting for owner response.</span>
                             <button
-                              onClick={() => handleAction(req.id, 'cancel', 'Request cancelled.')}
+                              onClick={() => setConfirmState({ type: 'CANCEL', request: req })}
                               disabled={actionLoadingId === req.id}
                               className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50 w-full sm:w-auto"
                             >
@@ -1260,7 +1395,7 @@ export default function DashboardPage() {
 
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
                               <button
-                                onClick={() => handleAction(req.id, 'cancel', 'Request cancelled.')}
+                                onClick={() => setConfirmState({ type: 'CANCEL', request: req })}
                                 disabled={actionLoadingId === req.id}
                                 className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50 w-full sm:w-auto"
                               >
@@ -1270,11 +1405,7 @@ export default function DashboardPage() {
 
                               <button
                                 type="button"
-                                onClick={() => {
-                                  if (window.confirm("Confirm physical receipt without a verification code? Note: A manual handover that the other person does not confirm will not count against anyone's account.")) {
-                                    handleAction(req.id, 'confirm-receipt', 'Receipt confirmed. Lease clock is now active.');
-                                  }
-                                }}
+                                onClick={() => setConfirmState({ type: 'MANUAL_RECEIPT_BORROWER', request: req })}
                                 disabled={actionLoadingId === req.id}
                                 className="text-[11px] font-medium text-brand-secondary hover:text-brand-primary underline cursor-pointer disabled:opacity-50 text-left"
                               >
@@ -1288,7 +1419,7 @@ export default function DashboardPage() {
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <span className="text-[11px] text-ink-secondary">Meet owner in person to complete exchange.</span>
                             <button
-                              onClick={() => handleAction(req.id, 'cancel', 'Request cancelled.')}
+                              onClick={() => setConfirmState({ type: 'CANCEL', request: req })}
                               disabled={actionLoadingId === req.id}
                               className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-tight text-xs font-semibold text-ink-secondary hover:text-red-700 bg-white hover:bg-red-50 border border-brand-secondary/25 hover:border-red-200 transition-colors cursor-pointer disabled:opacity-50 w-full sm:w-auto"
                             >
@@ -1337,11 +1468,7 @@ export default function DashboardPage() {
                                 <span className="text-[10px] text-ink-secondary">Can't use a code?</span>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    if (window.confirm("Declare item returned without a verification code? Note: A manual return that the other person does not confirm will not count against anyone's account.")) {
-                                      handleAction(req.id, 'return', 'Item marked as returned. Waiting for owner confirmation.');
-                                    }
-                                  }}
+                                  onClick={() => setConfirmState({ type: 'MANUAL_RETURN_BORROWER', request: req })}
                                   disabled={actionLoadingId === req.id}
                                   className="text-[11px] font-medium text-brand-secondary hover:text-brand-primary underline cursor-pointer disabled:opacity-50"
                                 >
@@ -1437,6 +1564,23 @@ export default function DashboardPage() {
         isOpen={isProfileModalOpen}
         onClose={handleCloseProfileModal}
         onSuccess={handleCloseProfileModal}
+      />
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmDialogConfig.title}
+        message={confirmDialogConfig.message}
+        confirmLabel={confirmDialogConfig.confirmLabel}
+        cancelLabel={confirmDialogConfig.cancelLabel}
+        danger={confirmDialogConfig.danger}
+        loading={confirmLoading}
+        onConfirm={handleConfirmAction}
+        onCancel={() => {
+          if (!confirmLoading) {
+            setConfirmState(null);
+          }
+        }}
       />
     </div>
   );
