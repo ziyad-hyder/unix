@@ -12,7 +12,7 @@ import {
 } from '../utils/push';
 import { normalizePhone } from '../utils/phone';
 
-export default function ProfileModal({ isOpen, onClose }) {
+export default function ProfileModal({ isOpen, onClose, onSuccess }) {
   const { user, updateUserPhone } = useAuth();
 
   const [phone, setPhone] = useState('');
@@ -140,6 +140,9 @@ export default function ProfileModal({ isOpen, onClose }) {
       setLoading(true);
       await updateUserPhone(normalizedPhone);
       setSuccessMessage('WhatsApp number updated successfully!');
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err) {
       setErrorMessage(err.message || 'Failed to update phone number.');
     } finally {

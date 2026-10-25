@@ -249,9 +249,13 @@ export default function DashboardPage() {
       fetchTransactions();
       fetchListings();
     } catch (err) {
+      const isPhoneRequired =
+        err.errorCode?.includes('PHONE_REQUIRED') ||
+        (err.message && err.message.toLowerCase().includes('phone number is required'));
       setActionMessage({
         type: 'error',
         text: getFriendlyErrorMessage(err, 'Failed to update request status.'),
+        isPhoneRequired,
       });
     } finally {
       setActionLoadingId(null);
@@ -562,17 +566,26 @@ export default function DashboardPage() {
                     : 'bg-red-50 border-red-200 text-red-800'
                 }`}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {actionMessage.type === 'success' ? (
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   ) : (
                     <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                   )}
                   <span className="font-medium">{actionMessage.text}</span>
+                  {actionMessage.isPhoneRequired && (
+                    <button
+                      type="button"
+                      onClick={() => setIsProfileModalOpen(true)}
+                      className="ml-2 px-2.5 py-1 rounded bg-brand-primary text-white text-xs font-semibold hover:bg-brand-secondary transition-colors cursor-pointer"
+                    >
+                      Add WhatsApp number
+                    </button>
+                  )}
                 </div>
                 <button
                   onClick={() => setActionMessage(null)}
-                  className="text-xs font-semibold underline opacity-70 hover:opacity-100 cursor-pointer ml-4"
+                  className="text-xs font-semibold underline opacity-70 hover:opacity-100 cursor-pointer ml-4 shrink-0"
                 >
                   Dismiss
                 </button>
@@ -1203,12 +1216,6 @@ export default function DashboardPage() {
       {/* Footer */}
       <Footer />
 
-      {/* Profile Modal */}
-      <ProfileModal
-        isOpen={isProfileModalOpen}
-        onClose={handleCloseProfileModal}
-      />
-
       {/* Create Listing Modal */}
       <CreateListingModal
         isOpen={isCreateModalOpen}
@@ -1229,6 +1236,14 @@ export default function DashboardPage() {
           fetchListings();
           fetchTransactions();
         }}
+        onRequestAddPhone={() => setIsProfileModalOpen(true)}
+      />
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={handleCloseProfileModal}
+        onSuccess={handleCloseProfileModal}
       />
     </div>
   );

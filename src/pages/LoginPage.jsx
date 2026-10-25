@@ -675,8 +675,11 @@ export default function LoginPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-ink-primary mb-1">
-                      WhatsApp Phone Number <span className="text-ink-secondary/70 font-normal">(optional)</span>
+                      WhatsApp Phone Number
                     </label>
+                    <p className="text-[11px] text-ink-secondary mb-1.5">
+                      Needed to request or accept items. You can add it later in Profile.
+                    </p>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-emerald-700">
                         <Phone className="w-4 h-4" />

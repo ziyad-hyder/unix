@@ -27,7 +27,8 @@ export default function ListingDetailModal({
   isOpen, 
   onClose, 
   onListingUpdated,
-  isAlreadyRequested = false
+  isAlreadyRequested = false,
+  onRequestAddPhone,
 }) {
   const { user } = useAuth();
 
@@ -38,6 +39,7 @@ export default function ListingDetailModal({
   const [successMessage, setSuccessMessage] = useState('');
   const [requestSent, setRequestSent] = useState(isAlreadyRequested);
   const [isAccountFrozen, setIsAccountFrozen] = useState(false);
+  const [isPhoneRequired, setIsPhoneRequired] = useState(false);
 
   // Edit form state
   const [editTitle, setEditTitle] = useState('');
@@ -74,6 +76,7 @@ export default function ListingDetailModal({
       setSuccessMessage('');
       setRequestSent(isAlreadyRequested);
       setIsAccountFrozen(false);
+      setIsPhoneRequired(false);
 
       if (listing) {
         setEditTitle(listing.title || '');
@@ -126,12 +129,20 @@ export default function ListingDetailModal({
 
     try {
       setLoading(true);
+      setIsPhoneRequired(false);
       await api.post('/api/transactions', { listingId: listing.id });
       setSuccessMessage('Request sent successfully! The owner will be notified.');
       setRequestSent(true);
       onListingUpdated?.();
     } catch (err) {
-      if (err.errorCode === 'ACCOUNT_FROZEN' || (err.message && err.message.toLowerCase().includes('frozen'))) {
+      const isPhoneReq =
+        err.errorCode?.includes('PHONE_REQUIRED') ||
+        (err.message && err.message.toLowerCase().includes('phone number is required'));
+
+      if (isPhoneReq) {
+        setIsPhoneRequired(true);
+        setErrorMessage(getFriendlyErrorMessage(err, 'A phone number is required on your profile before requesting or accepting transactions.'));
+      } else if (err.errorCode === 'ACCOUNT_FROZEN' || (err.message && err.message.toLowerCase().includes('frozen'))) {
         setIsAccountFrozen(true);
         setErrorMessage(getFriendlyErrorMessage(err, 'Your account is frozen due to overdue rentals. You cannot create new requests.'));
       } else if (err.message && err.message.toLowerCase().includes('already have an active')) {
@@ -273,9 +284,20 @@ export default function ListingDetailModal({
 
         {/* Modal Notifications */}
         {errorMessage && (
-          <div className="mx-6 mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{errorMessage}</span>
+          <div className="mx-6 mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{errorMessage}</span>
+            </div>
+            {isPhoneRequired && onRequestAddPhone && (
+              <button
+                type="button"
+                onClick={onRequestAddPhone}
+                className="shrink-0 self-start sm:self-center px-2.5 py-1.5 rounded-lg bg-brand-primary text-white text-xs font-semibold hover:bg-brand-secondary transition-colors cursor-pointer"
+              >
+                Add WhatsApp number
+              </button>
+            )}
           </div>
         )}
 
