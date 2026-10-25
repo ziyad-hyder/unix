@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import { 
@@ -50,12 +50,25 @@ export default function ListingDetailModal({
   const [editDepositAmount, setEditDepositAmount] = useState('');
   const [editSwapPreferences, setEditSwapPreferences] = useState('');
 
+  // Keep onClose in a ref for Escape handler so it doesn't re-subscribe on every render
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current?.();
     };
     if (isOpen) {
       window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen]);
+
+  // Reset effect: depends ONLY on [isOpen, listing?.id]
+  useEffect(() => {
+    if (isOpen) {
       setMode('VIEW');
       setErrorMessage('');
       setSuccessMessage('');
@@ -74,8 +87,7 @@ export default function ListingDetailModal({
         setEditSwapPreferences(listing.swapPreferences || '');
       }
     }
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, listing, isAlreadyRequested, onClose]);
+  }, [isOpen, listing?.id]);
 
   if (!isOpen || !listing) return null;
 
@@ -172,16 +184,30 @@ export default function ListingDetailModal({
       setLoading(true);
       await api.put(`/api/listings/${listing.id}`, payload);
       setSuccessMessage('Listing updated successfully!');
+      setMode('VIEW');
       onListingUpdated?.();
-      setTimeout(() => {
-        setMode('VIEW');
-        setSuccessMessage('');
-      }, 800);
     } catch (err) {
       setErrorMessage(getFriendlyErrorMessage(err, 'Failed to update listing.'));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleStartEdit = () => {
+    setErrorMessage('');
+    setSuccessMessage('');
+    if (listing) {
+      setEditTitle(listing.title || '');
+      setEditDescription(listing.description || '');
+      setEditCategory(listing.category || 'CALCULATOR');
+      setEditType(listing.type || 'SELL');
+      setEditPrice(listing.price != null ? String(listing.price) : '');
+      setEditRentalRate(listing.rentalRate != null ? String(listing.rentalRate) : '');
+      setEditRentalPeriod(listing.rentalPeriod || 'SEMESTER');
+      setEditDepositAmount(listing.depositAmount != null ? String(listing.depositAmount) : '');
+      setEditSwapPreferences(listing.swapPreferences || '');
+    }
+    setMode('EDIT');
   };
 
   // 3. Delete / Close Listing (Owner)
@@ -342,7 +368,7 @@ export default function ListingDetailModal({
                   <p className="text-xs font-semibold text-ink-secondary mb-2">You are the owner of this listing</p>
                   <div className="flex items-center justify-center gap-2.5">
                     <button
-                      onClick={() => setMode('EDIT')}
+                      onClick={handleStartEdit}
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-ink-primary bg-white hover:bg-brand-primary/5 border border-brand-secondary/25 transition-colors cursor-pointer"
                     >
                       <Edit3 className="w-3.5 h-3.5 text-brand-secondary" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   X, User, Phone, CheckCircle2, AlertCircle, 
@@ -45,20 +45,44 @@ export default function ProfileModal({ isOpen, onClose }) {
     }
   }, []);
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  const userRef = useRef(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  const checkPushRef = useRef(checkPush);
+  useEffect(() => {
+    checkPushRef.current = checkPush;
+  }, [checkPush]);
+
+  const prevIsOpenRef = useRef(false);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current?.();
     };
     if (isOpen) {
       window.addEventListener('keydown', handleKeyDown);
-      setPhone(user?.phone || '');
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen]);
+
+  // Seed phone and clear messages ONLY when isOpen flips false -> true
+  useEffect(() => {
+    if (isOpen && !prevIsOpenRef.current) {
+      setPhone(userRef.current?.phone || '');
       setErrorMessage('');
       setSuccessMessage('');
       setPushMessage(null);
-      checkPush();
+      checkPushRef.current?.();
     }
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, user, onClose, checkPush]);
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen]);
 
   if (!isOpen || !user) return null;
 
@@ -117,9 +141,6 @@ export default function ProfileModal({ isOpen, onClose }) {
       setLoading(true);
       await updateUserPhone(cleanPhone || null);
       setSuccessMessage('WhatsApp number updated successfully!');
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
     } catch (err) {
       setErrorMessage(err.message || 'Failed to update phone number.');
     } finally {

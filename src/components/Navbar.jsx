@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, CheckCircle2, User } from 'lucide-react';
 import ProfileModal from './ProfileModal';
@@ -26,6 +26,10 @@ export function UniXLogoMark({ className = "w-9 h-9" }) {
 export default function Navbar() {
   const { user, logout } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const handleCloseProfile = useCallback(() => {
+    setIsProfileOpen(false);
+  }, []);
 
   return (
     <>
@@ -87,7 +91,7 @@ export default function Navbar() {
       {/* Profile Modal */}
       <ProfileModal
         isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
+        onClose={handleCloseProfile}
       />
     </>
   );

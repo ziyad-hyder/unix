@@ -145,11 +145,33 @@ export default function DashboardPage() {
   const [listings, setListings] = useState([]);
   const [listingsLoading, setListingsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedListingForDetail, setSelectedListingForDetail] = useState(null);
+  const [selectedListingId, setSelectedListingId] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedType, setSelectedType] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Derived selected listing
+  const selectedListing = listings.find((l) => l.id === selectedListingId);
+
+  // If selected listing is no longer in listings after a refetch, close the modal
+  useEffect(() => {
+    if (selectedListingId && !listings.some((l) => l.id === selectedListingId)) {
+      setSelectedListingId(null);
+    }
+  }, [listings, selectedListingId]);
+
+  const handleCloseDetailModal = useCallback(() => {
+    setSelectedListingId(null);
+  }, []);
+
+  const handleCloseCreateModal = useCallback(() => {
+    setIsCreateModalOpen(false);
+  }, []);
+
+  const handleCloseProfileModal = useCallback(() => {
+    setIsProfileModalOpen(false);
+  }, []);
 
   // Transactions State
   const [incomingRequests, setIncomingRequests] = useState([]);
@@ -476,7 +498,7 @@ export default function DashboardPage() {
                   <ListingCard
                     key={item.id}
                     listing={item}
-                    onClick={() => setSelectedListingForDetail(item)}
+                    onClick={() => setSelectedListingId(item.id)}
                   />
                 ))}
               </div>
@@ -1084,13 +1106,13 @@ export default function DashboardPage() {
       {/* Profile Modal */}
       <ProfileModal
         isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
+        onClose={handleCloseProfileModal}
       />
 
       {/* Create Listing Modal */}
       <CreateListingModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={handleCloseCreateModal}
         onSuccess={() => {
           fetchListings();
           fetchTransactions();
@@ -1099,10 +1121,10 @@ export default function DashboardPage() {
 
       {/* Listing Detail & Request Modal */}
       <ListingDetailModal
-        listing={selectedListingForDetail}
-        isOpen={!!selectedListingForDetail}
-        isAlreadyRequested={selectedListingForDetail ? requestedListingIds.has(selectedListingForDetail.id) : false}
-        onClose={() => setSelectedListingForDetail(null)}
+        listing={selectedListing}
+        isOpen={Boolean(selectedListingId && selectedListing)}
+        isAlreadyRequested={selectedListing ? requestedListingIds.has(selectedListing.id) : false}
+        onClose={handleCloseDetailModal}
         onListingUpdated={() => {
           fetchListings();
           fetchTransactions();
