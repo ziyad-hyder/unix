@@ -20,7 +20,7 @@ import {
 import { getFriendlyErrorMessage } from '../utils/errors';
 import { mergePage } from '../utils/pagination';
 import { AUTO_START_HOURS, AUTO_COMPLETE_HOURS } from '../utils/policy';
-import { needsAction, isHistory } from '../utils/transactionState';
+import { detectNewlyClosed, groupRequests, getClosedNotice } from '../utils/transactionState';
 import { categoryLabel, typeLabel } from '../utils/labels';
 
 const CATEGORY_FILTERS = [
@@ -110,6 +110,42 @@ export default function DashboardPage() {
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [incomingHistoryOpen, setIncomingHistoryOpen] = useState(false);
   const [outgoingHistoryOpen, setOutgoingHistoryOpen] = useState(false);
+
+  // Pinned terminal transactions to avoid jarring disappearances from active list
+  const [pinnedClosed, setPinnedClosed] = useState({});
+  const prevStatusByIdRef = useRef(null);
+  const pinTimersRef = useRef(new Map());
+
+  // Clear pin early if user opens History disclosure
+  const clearPinsFor = useCallback((ids) => {
+    setPinnedClosed((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      const targetIds = ids || Object.keys(next);
+      for (const id of targetIds) {
+        if (next[id]) {
+          delete next[id];
+          changed = true;
+        }
+        if (pinTimersRef.current.has(id)) {
+          clearTimeout(pinTimersRef.current.get(id));
+          pinTimersRef.current.delete(id);
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, []);
+
+  // Clear all pin timers on unmount
+  useEffect(() => {
+    const timers = pinTimersRef.current;
+    return () => {
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
+      }
+      timers.clear();
+    };
+  }, []);
 
   const clearCardFeedback = useCallback((reqId) => {
     if (feedbackTimersRef.current[reqId]) {
@@ -269,6 +305,47 @@ export default function DashboardPage() {
           setIncomingRequests(nextReceived);
           setOutgoingRequests(nextSent);
         }
+
+        const allNext = [...nextReceived, ...nextSent];
+
+        // Pin newly closed transactions for 6 seconds so their completion status isn't jarringly hidden
+        if (prevStatusByIdRef.current !== null) {
+          const newlyClosed = detectNewlyClosed(prevStatusByIdRef.current, allNext);
+          if (newlyClosed.length > 0) {
+            const nowTime = Date.now();
+            setPinnedClosed((prev) => {
+              const next = { ...prev };
+              for (const id of newlyClosed) {
+                const req = allNext.find((r) => r && r.id === id);
+                next[id] = { status: req?.status, until: nowTime + 6000 };
+
+                if (pinTimersRef.current.has(id)) {
+                  clearTimeout(pinTimersRef.current.get(id));
+                }
+                const timer = setTimeout(() => {
+                  setPinnedClosed((curr) => {
+                    if (!curr[id]) return curr;
+                    const updated = { ...curr };
+                    delete updated[id];
+                    return updated;
+                  });
+                  pinTimersRef.current.delete(id);
+                }, 6000);
+                pinTimersRef.current.set(id, timer);
+              }
+              return next;
+            });
+          }
+        }
+
+        // Update previous status tracking map
+        const newStatusMap = {};
+        for (const req of allNext) {
+          if (req && req.id != null) {
+            newStatusMap[req.id] = req.status;
+          }
+        }
+        prevStatusByIdRef.current = newStatusMap;
       }
     } catch (err) {
       if (requestId !== transactionsRequestIdRef.current) return;
@@ -557,19 +634,21 @@ export default function DashboardPage() {
       .filter(Boolean)
   );
 
-  const totalNeedsActionCount =
-    incomingRequests.filter((r) => needsAction(r, 'owner')).length +
-    outgoingRequests.filter((r) => needsAction(r, 'borrower')).length;
-
-  const incomingNeedsAction = incomingRequests.filter((r) => needsAction(r, 'owner'));
-  const incomingInProgress = incomingRequests.filter((r) => !needsAction(r, 'owner') && !isHistory(r));
-  const incomingHistory = incomingRequests.filter((r) => isHistory(r));
+  const {
+    needsAction: incomingNeedsAction,
+    inProgress: incomingInProgress,
+    history: incomingHistory,
+  } = groupRequests(incomingRequests, 'owner', pinnedClosed);
   const incomingActive = [...incomingNeedsAction, ...incomingInProgress];
 
-  const outgoingNeedsAction = outgoingRequests.filter((r) => needsAction(r, 'borrower'));
-  const outgoingInProgress = outgoingRequests.filter((r) => !needsAction(r, 'borrower') && !isHistory(r));
-  const outgoingHistory = outgoingRequests.filter((r) => isHistory(r));
+  const {
+    needsAction: outgoingNeedsAction,
+    inProgress: outgoingInProgress,
+    history: outgoingHistory,
+  } = groupRequests(outgoingRequests, 'borrower', pinnedClosed);
   const outgoingActive = [...outgoingNeedsAction, ...outgoingInProgress];
+
+  const totalNeedsActionCount = incomingNeedsAction.length + outgoingNeedsAction.length;
 
   const filteredListings = listings.filter((item) => {
     if (!searchQuery.trim()) return true;
@@ -587,6 +666,7 @@ export default function DashboardPage() {
       cardFeedback={cardFeedback}
       actionLoadingId={actionLoadingId}
       codeInputs={codeInputs}
+      closedNotice={pinnedClosed[req.id] ? getClosedNotice(pinnedClosed[req.id].status || req.status) : null}
       onCodeInputChange={handleCodeInputChange}
       onVerifyCode={handleVerifyCode}
       onUpdateStatus={handleUpdateStatus}
@@ -604,6 +684,7 @@ export default function DashboardPage() {
       cardFeedback={cardFeedback}
       actionLoadingId={actionLoadingId}
       codeInputs={codeInputs}
+      closedNotice={pinnedClosed[req.id] ? getClosedNotice(pinnedClosed[req.id].status || req.status) : null}
       onCodeInputChange={handleCodeInputChange}
       onVerifyCode={handleVerifyCode}
       onConfirmState={setConfirmState}
@@ -1006,7 +1087,12 @@ export default function DashboardPage() {
                     <div className="pt-2">
                       <button
                         type="button"
-                        onClick={() => setIncomingHistoryOpen((prev) => !prev)}
+                        onClick={() => {
+                          if (!incomingHistoryOpen) {
+                            clearPinsFor(incomingRequests.map((r) => r.id));
+                          }
+                          setIncomingHistoryOpen((prev) => !prev);
+                        }}
                         aria-expanded={incomingHistoryOpen}
                         className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-secondary hover:text-ink-primary transition-colors cursor-pointer py-1"
                       >
@@ -1053,7 +1139,12 @@ export default function DashboardPage() {
                     <div className="pt-2">
                       <button
                         type="button"
-                        onClick={() => setOutgoingHistoryOpen((prev) => !prev)}
+                        onClick={() => {
+                          if (!outgoingHistoryOpen) {
+                            clearPinsFor(outgoingRequests.map((r) => r.id));
+                          }
+                          setOutgoingHistoryOpen((prev) => !prev);
+                        }}
                         aria-expanded={outgoingHistoryOpen}
                         className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-secondary hover:text-ink-primary transition-colors cursor-pointer py-1"
                       >

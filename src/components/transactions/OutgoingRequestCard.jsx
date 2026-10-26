@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  CheckCircle2, AlertCircle, RefreshCw, MessageCircle, Check, X 
+  CheckCircle2, AlertCircle, RefreshCw, MessageCircle, Clock, Check, X 
 } from 'lucide-react';
 import { typeLabel } from '../../utils/labels';
 import { toWhatsAppUrl } from '../../utils/phone';
@@ -14,6 +14,7 @@ export default function OutgoingRequestCard({
   cardFeedback = {},
   actionLoadingId,
   codeInputs = {},
+  closedNotice = null,
   onCodeInputChange,
   onVerifyCode,
   onConfirmState,
@@ -26,6 +27,24 @@ export default function OutgoingRequestCard({
       className="bg-white rounded-xl border border-brand-secondary/20 p-4 flex flex-col justify-between space-y-3 min-w-0"
     >
       <div>
+        {closedNotice && (
+          <div
+            role="status"
+            className={`mb-3 px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-2 transition-opacity duration-200 motion-reduce:transition-none ${
+              req.status === 'COMPLETED'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                : 'bg-stone-100 text-stone-700 border-stone-200'
+            }`}
+          >
+            {req.status === 'COMPLETED' ? (
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            ) : (
+              <Clock className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+            )}
+            <span>{closedNotice}</span>
+          </div>
+        )}
+
         {/* Top: Item Title & Badges */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
           <div className="min-w-0 flex-1">
