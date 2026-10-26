@@ -100,9 +100,13 @@ Flyway versioned migrations run at startup, so production schema changes are app
 
 Lease cards show a live countdown and switch to overdue styling when time runs out. A transaction renders different actions and codes depending on whether the viewer is the owner or the borrower. Tested on iOS Safari and Android Chrome.
 
-UniX is fully installable as a standalone PWA on mobile and desktop devices. A smart, non-intrusive install banner detects current display mode, hides permanently if already running standalone, respects dismissals, and unmounts immediately upon installation.
+The My Transactions hub organizes incoming and outgoing requests into three priority tiers: **Needs Action** (actionable items with live counter badges on the navigation tab), **In Progress** (active leases with countdowns and pickup/return verification codes), and a collapsible **History** section for terminal transactions (`COMPLETED`, `CANCELLED`, `REJECTED`, `EXPIRED`). To avoid the jarring effect of cards disappearing instantly when completed or cancelled, newly closed transactions are pinned for 6 seconds with a calm/neutral status notice before transitioning to History.
 
-Styling uses a custom palette called Inception: `#173541` (primary), `#557C86` (slate), `#FAFAF8` (canvas). Inter for text, monospace for verification codes. 100 unit tests cover time formatting, countdown calculations, PWA standalone detection, platform-specific install rules, label enums, and push notification utilities (`npm test`).
+Modal workflows (item creation, editing, detail inspection, and profile settings) use a centralized `useModalA11y` hook enforcing a top-of-stack focus trap, ref-counted body scroll locking, and Esc key dismissal. Background silent polling refreshes transactions every 20 seconds while active, guarded by request sequence counters to prevent stale responses from overwriting newer state. Destructive actions use a dedicated `ConfirmDialog` modal, and an application-wide `ErrorBoundary` catches unexpected client faults gracefully.
+
+UniX is fully installable as a standalone PWA on mobile and desktop devices. A smart, non-intrusive install banner detects current display mode, hides permanently if already running standalone, respects 7-day timed dismissals, and unmounts immediately upon installation.
+
+Styling uses a custom palette called Inception: `#173541` (primary), `#557C86` (slate), `#FAFAF8` (canvas). Inter for text, monospace for verification codes. 115 unit tests cover transaction state transitions, priority request grouping, terminal pinning, time formatting, countdown calculations, PWA standalone detection, platform-specific install rules, label enums, pagination merge, phone normalization, policy constants, and push notification utilities (`npm test`).
 
 ### Brand identity
 
@@ -132,9 +136,10 @@ Open `http://localhost:5173`. `VITE_API_URL` is the only client-side variable. T
 2. `SameSite=None; Secure` is insufficient on mobile WebKit. Cross-site sessions need a second path such as a bearer header.
 3. `-Xmx` caps only the heap. Metaspace, thread stacks and the JIT cache sit outside it and add up on a small VM.
 4. A penalty clock started by one party's unilateral action causes disputes. Requiring confirmation from both sides, with a fallback, was simpler than adding more buttons.
-5. PWA installation behaves differently across mobile browsers. Chromium supports programmatic prompts, but iOS Safari requires inline manual instructions. Using `sessionStorage` instead of `localStorage` allows dismissals without permanently suppressing installation for interested users.
+5. PWA installation behaves differently across mobile browsers. Chromium supports programmatic prompts, but iOS Safari requires inline manual instructions. Using a 7-day timed dismissal window in storage respects user dismissals without permanently suppressing installation for interested users.
 6. Web push subscriptions are tied to individual browsers, not accounts. Supporting multiple endpoints per user and automatically pruning stale subscriptions on HTTP 410 (Gone) keeps notification delivery reliable across devices.
 7. Inline callbacks and derived objects in `useEffect` deps reset modal state on every parent render; key effects on ids and keep callbacks in refs.
+8. Instant list transitions on terminal events feel like card deletion: Automatically moving items to a collapsed history section immediately after an action removes the success message and completion confirmation before the user can read it. Pinning newly terminal cards for a brief grace window with a clear status notice preserves visual continuity.
 
 ---
 
