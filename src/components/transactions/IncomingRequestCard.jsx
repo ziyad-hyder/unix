@@ -7,6 +7,7 @@ import { toWhatsAppUrl } from '../../utils/phone';
 import { formatDateTime, formatAutoCompleteRemaining } from '../../utils/time';
 import { AUTO_COMPLETE_HOURS } from '../../utils/policy';
 import { StatusBadge, CountdownBadge } from './Badges';
+import { trackEvent } from '../../utils/analytics';
 
 export default function IncomingRequestCard({
   req,
@@ -69,6 +70,14 @@ export default function IncomingRequestCard({
                   href={waUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => {
+                    trackEvent('contact_reveal_click', {
+                      transaction_id: req.id,
+                      role: 'owner',
+                      listing_id: req.listing?.id,
+                      listing_type: req.listing?.type,
+                    });
+                  }}
                   className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-tight text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-xs shrink-0"
                   title={`Chat with ${req.requester.fullName || 'student'} on WhatsApp`}
                 >

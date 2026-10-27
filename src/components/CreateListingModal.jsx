@@ -5,6 +5,7 @@ import { X, PlusCircle, AlertCircle, RefreshCw, Image as ImageIcon, Upload, Tras
 import useModalA11y from '../hooks/useModalA11y';
 import ConfirmDialog from './ConfirmDialog';
 import { getFriendlyErrorMessage } from '../utils/errors';
+import { trackEvent } from '../utils/analytics';
 
 const CATEGORIES = [
   { value: 'CALCULATOR', label: 'Scientific Calculator (fx-991CW / ES)' },
@@ -172,11 +173,23 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }) {
       const res = await api.post('/api/listings', payload);
       const newListing = res.data?.data;
 
+      trackEvent('listing_create', {
+        listing_id: newListing?.id,
+        category: newListing?.category || payload.category,
+        type: newListing?.type || payload.type,
+        price: newListing?.price ?? newListing?.rentalRate ?? 0,
+        has_image: Boolean(imageFile),
+      });
+
       // If image is attached, upload to Cloudflare R2
       if (imageFile && newListing?.id) {
         const formData = new FormData();
         formData.append('file', imageFile, 'listing-image.jpg');
         await api.post(`/api/listings/${newListing.id}/image`, formData);
+        trackEvent('listing_image_upload', {
+          listing_id: newListing.id,
+          file_size_bytes: imageFile.size,
+        });
       }
 
       resetForm();

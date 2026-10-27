@@ -8,6 +8,7 @@ import {
   Edit3, Trash2, ArrowLeft, Save, Clock 
 } from 'lucide-react';
 import { getFriendlyErrorMessage } from '../utils/errors';
+import { trackEvent } from '../utils/analytics';
 import { formatDateTime, formatDuration } from '../utils/time';
 import { AUTO_START_HOURS, FREEZE_AFTER_OVERDUE_HOURS } from '../utils/policy';
 import { categoryLabel, typeLabel, typeActionLabel, rentalPeriodLabel, formatPrice } from '../utils/labels';
@@ -133,6 +134,11 @@ export default function ListingDetailModal({
       setLoading(true);
       setIsPhoneRequired(false);
       await api.post('/api/transactions', { listingId: listing.id });
+      trackEvent('transaction_request', {
+        listing_id: listing.id,
+        listing_type: listing.type,
+        category: listing.category,
+      });
       setSuccessMessage('Request sent successfully! The owner will be notified.');
       setRequestSent(true);
       onListingUpdated?.();

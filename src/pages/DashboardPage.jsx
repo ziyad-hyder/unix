@@ -22,6 +22,7 @@ import { mergePage } from '../utils/pagination';
 import { AUTO_START_HOURS, AUTO_COMPLETE_HOURS } from '../utils/policy';
 import { detectNewlyClosed, groupRequests, getClosedNotice } from '../utils/transactionState';
 import { categoryLabel, typeLabel } from '../utils/labels';
+import { trackEvent, sanitizeSearchTerm } from '../utils/analytics';
 
 const CATEGORY_FILTERS = [
   { id: 'ALL', label: categoryLabel('ALL') },
@@ -48,9 +49,11 @@ export default function DashboardPage() {
   const activeTab = tabParam === 'transactions' ? 'TRANSACTIONS' : 'MARKETPLACE';
 
   const handleTabChange = useCallback((newTab) => {
+    const tabName = newTab.toLowerCase() === 'transactions' ? 'transactions' : 'marketplace';
+    trackEvent('tab_view', { tab_name: tabName });
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      if (newTab.toLowerCase() === 'transactions') {
+      if (tabName === 'transactions') {
         next.set('tab', 'transactions');
       } else {
         next.set('tab', 'marketplace');
@@ -74,6 +77,16 @@ export default function DashboardPage() {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedType, setSelectedType] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Debounced search tracking (fires 600ms after user pauses typing)
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    const timer = setTimeout(() => {
+      trackEvent('search', { search_term: sanitizeSearchTerm(q) });
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Derived selected listing
   const selectedListing = listings.find((l) => l.id === selectedListingId);
@@ -279,6 +292,11 @@ export default function DashboardPage() {
 
   const handleLoadMore = () => {
     if (loadingMoreListings || !hasMoreListings) return;
+    trackEvent('listing_load_more', {
+      page_number: listingsPage + 1,
+      category: selectedCategory,
+      type: selectedType,
+    });
     fetchListings({ page: listingsPage + 1 });
   };
 
@@ -415,6 +433,9 @@ export default function DashboardPage() {
 
     try {
       await api.patch(`/api/transactions/${transactionId}/status`, { status: newStatus });
+      if (newStatus === 'ACCEPTED') {
+        trackEvent('transaction_accept', { transaction_id: transactionId });
+      }
       setCardFeedbackHelper(transactionId, {
         type: 'success',
         text: newStatus === 'ACCEPTED' ? 'Request accepted. Listing is now reserved.' : 'Request rejected.',
@@ -474,6 +495,21 @@ export default function DashboardPage() {
 
     try {
       await api.post(`/api/transactions/${transactionId}/${endpoint}`, { code });
+      if (endpoint === 'verify-handoff') {
+        trackEvent('transaction_verify_handoff', {
+          transaction_id: transactionId,
+          verification_method: 'code',
+        });
+      } else if (endpoint === 'verify-return') {
+        trackEvent('transaction_verify_return', {
+          transaction_id: transactionId,
+          verification_method: 'code',
+        });
+        trackEvent('transaction_complete', {
+          transaction_id: transactionId,
+          completion_type: 'verify-return',
+        });
+      }
       setCardFeedbackHelper(transactionId, {
         type: 'success',
         text: successText,
@@ -605,20 +641,57 @@ export default function DashboardPage() {
     try {
       if (type === 'REJECT') {
         await handleUpdateStatus(request.id, 'REJECTED');
+        trackEvent('transaction_reject', {
+          transaction_id: request.id,
+          listing_id: request.listing?.id,
+        });
       } else if (type === 'CANCEL') {
         await handleAction(request.id, 'cancel', 'Request cancelled.');
+        trackEvent('transaction_cancel', {
+          transaction_id: request.id,
+          listing_id: request.listing?.id,
+          previous_status: request.status,
+        });
       } else if (type === 'MANUAL_HANDOVER_OWNER') {
         await handleAction(request.id, 'handoff', 'Handover recorded. Waiting for borrower to confirm receipt.');
+        trackEvent('transaction_handoff_fallback', {
+          transaction_id: request.id,
+          fallback_step: 'MANUAL_HANDOVER_OWNER',
+        });
       } else if (type === 'MANUAL_RECEIPT_BORROWER') {
         await handleAction(request.id, 'confirm-receipt', 'Receipt confirmed. Lease clock is now active.');
+        trackEvent('transaction_handoff_fallback', {
+          transaction_id: request.id,
+          fallback_step: 'MANUAL_RECEIPT_BORROWER',
+        });
       } else if (type === 'MANUAL_RETURN_BORROWER') {
         await handleAction(request.id, 'return', 'Item marked as returned. Waiting for owner confirmation.');
+        trackEvent('transaction_return_fallback', {
+          transaction_id: request.id,
+          fallback_step: 'MANUAL_RETURN_BORROWER',
+        });
       } else if (type === 'COMPLETE_EXCHANGE') {
         await handleAction(request.id, 'complete', 'Transaction marked as completed.');
+        trackEvent('transaction_complete', {
+          transaction_id: request.id,
+          completion_type: 'COMPLETE_EXCHANGE',
+        });
       } else if (type === 'CONFIRM_RETURN') {
         await handleAction(request.id, 'confirm-return', 'Return confirmed. Transaction completed.');
+        trackEvent('transaction_return_fallback', {
+          transaction_id: request.id,
+          fallback_step: 'CONFIRM_RETURN',
+        });
+        trackEvent('transaction_complete', {
+          transaction_id: request.id,
+          completion_type: 'CONFIRM_RETURN',
+        });
       } else if (type === 'DISPUTE') {
         await handleAction(request.id, 'dispute', 'Return disputed. Auto-completion suspended.');
+        trackEvent('transaction_dispute', {
+          transaction_id: request.id,
+          listing_id: request.listing?.id,
+        });
       }
     } finally {
       setConfirmLoading(false);
@@ -774,7 +847,10 @@ export default function DashboardPage() {
                   {CATEGORY_FILTERS.map((cat) => (
                     <button
                       key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        trackEvent('select_content', { content_type: 'category', item_id: cat.id });
+                      }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                         selectedCategory === cat.id
                           ? 'bg-brand-primary text-white'
@@ -818,7 +894,10 @@ export default function DashboardPage() {
                   {TYPE_FILTERS.map((t) => (
                     <button
                       key={t.id}
-                      onClick={() => setSelectedType(t.id)}
+                      onClick={() => {
+                        setSelectedType(t.id);
+                        trackEvent('select_content', { content_type: 'listing_type', item_id: t.id });
+                      }}
                       className={`px-2.5 py-1 rounded-lg text-xs transition-colors cursor-pointer ${
                         selectedType === t.id
                           ? 'bg-brand-primary/10 text-brand-primary border border-brand-secondary/30 font-semibold'
@@ -1089,6 +1168,7 @@ export default function DashboardPage() {
                         type="button"
                         onClick={() => {
                           if (!incomingHistoryOpen) {
+                            trackEvent('history_expanded', { section: 'incoming' });
                             clearPinsFor(incomingRequests.map((r) => r.id));
                           }
                           setIncomingHistoryOpen((prev) => !prev);
@@ -1141,6 +1221,7 @@ export default function DashboardPage() {
                         type="button"
                         onClick={() => {
                           if (!outgoingHistoryOpen) {
+                            trackEvent('history_expanded', { section: 'outgoing' });
                             clearPinsFor(outgoingRequests.map((r) => r.id));
                           }
                           setOutgoingHistoryOpen((prev) => !prev);
