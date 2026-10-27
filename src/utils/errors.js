@@ -1,5 +1,6 @@
 import { formatDuration } from './time.js';
 import { FREEZE_AFTER_OVERDUE_HOURS, CODE_LOCK_MINUTES } from './policy.js';
+import { trackEvent } from './analytics.js';
 
 /**
  * Central Error Code Mapping & Sanitizer for UniX Frontend
@@ -46,12 +47,17 @@ export function getFriendlyErrorMessage(err, fallbackMessage = 'An unexpected er
     console.error('[API Error Detail]:', err);
   }
 
-  const status = err.status !== undefined ? err.status : err.response?.status;
+  const rawErrorCode = err?.errorCode || err?.response?.data?.errorCode;
+  const status = err?.status !== undefined ? err.status : err?.response?.status;
+  const resolvedErrorCode = rawErrorCode || (status !== undefined && status !== null ? `http_${status}` : 'unknown_error');
+
+  trackEvent('error_shown', { error_code: resolvedErrorCode });
+
   if (status === 0) {
     return HTTP_STATUS_MAP[0];
   }
 
-  const errorCode = err.errorCode || err.response?.data?.errorCode;
+  const errorCode = rawErrorCode;
 
   // 1. Check for CODE_LOCKED to show formatted retry duration
   if (errorCode === 'CODE_LOCKED') {

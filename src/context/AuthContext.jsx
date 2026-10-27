@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api, { resetUnauthorizedGuard } from '../api/api';
+import { trackEvent } from '../utils/analytics';
 
 const AuthContext = createContext(null);
 
@@ -82,6 +83,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('unix_token', userData.token);
       }
       setUser(userData);
+      trackEvent('login', { method: 'password' });
     }
     return res.data;
   };
@@ -121,6 +123,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('unix_token', userData.token);
       }
       setUser(userData);
+      trackEvent('sign_up', { method: 'email_otp' });
     }
     return res.data;
   };
