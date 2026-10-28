@@ -106,7 +106,7 @@ Modal workflows (item creation, editing, detail inspection, and profile settings
 
 UniX is fully installable as a standalone PWA on mobile and desktop devices. A smart, non-intrusive install banner detects current display mode, hides permanently if already running standalone, respects 7-day timed dismissals, and unmounts immediately upon installation.
 
-Styling uses a custom palette called Inception: `#173541` (primary), `#557C86` (slate), `#FAFAF8` (canvas). Inter for text, monospace for verification codes. 115 unit tests cover transaction state transitions, priority request grouping, terminal pinning, time formatting, countdown calculations, PWA standalone detection, platform-specific install rules, label enums, pagination merge, phone normalization, policy constants, and push notification utilities (`npm test`).
+Styling uses a custom palette called Inception: `#173541` (primary), `#557C86` (slate), `#FAFAF8` (canvas). Inter for text, monospace for verification codes. Privacy-conscious usage telemetry (GA4) uses client-side allowlisting to map user journeys without ever transmitting phone numbers, verification codes, or personal query text. 128 unit tests cover transaction state transitions, priority request grouping, terminal pinning, time formatting, countdown calculations, PWA standalone detection, platform-specific install rules, label enums, pagination merge, phone normalization, policy constants, web push utilities, and analytics guardrails (`npm test`).
 
 ### Brand identity
 
