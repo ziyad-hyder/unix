@@ -13,6 +13,7 @@ import {
 } from '../utils/push';
 import { normalizePhone } from '../utils/phone';
 import { getFriendlyErrorMessage } from '../utils/errors';
+import { trackEvent } from '../utils/analytics';
 
 export default function ProfileModal({ isOpen, onClose, onSuccess }) {
   const { user, updateUserPhone } = useAuth();
@@ -89,9 +90,11 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
     try {
       if (pushStatus.subscribed) {
         await unsubscribeFromPush();
+        trackEvent('push_unsubscribe');
         setPushMessage({ type: 'success', text: 'Notifications disabled on this device.' });
       } else {
         await subscribeToPush();
+        trackEvent('push_subscribe');
         setPushMessage({ type: 'success', text: 'Notifications enabled successfully!' });
       }
       await checkPush();
@@ -107,6 +110,7 @@ export default function ProfileModal({ isOpen, onClose, onSuccess }) {
     setPushActionLoading(true);
     try {
       const res = await sendTestPush();
+      trackEvent('push_test_sent');
       setPushMessage({
         type: 'success',
         text: res?.message || 'Test push notification dispatched! Check your device.',

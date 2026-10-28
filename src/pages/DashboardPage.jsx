@@ -128,6 +128,7 @@ export default function DashboardPage() {
   const [pinnedClosed, setPinnedClosed] = useState({});
   const prevStatusByIdRef = useRef(null);
   const pinTimersRef = useRef(new Map());
+  const completedTrackedIdsRef = useRef(new Set());
 
   // Clear pin early if user opens History disclosure
   const clearPinsFor = useCallback((ids) => {
@@ -330,6 +331,17 @@ export default function DashboardPage() {
         if (prevStatusByIdRef.current !== null) {
           const newlyClosed = detectNewlyClosed(prevStatusByIdRef.current, allNext);
           if (newlyClosed.length > 0) {
+            for (const id of newlyClosed) {
+              const req = allNext.find((r) => r && r.id === id);
+              if (req?.status === 'COMPLETED' && !completedTrackedIdsRef.current.has(id)) {
+                completedTrackedIdsRef.current.add(id);
+                trackEvent('transaction_complete', {
+                  transaction_id: id,
+                  completion_type: 'auto_complete',
+                });
+              }
+            }
+
             const nowTime = Date.now();
             setPinnedClosed((prev) => {
               const next = { ...prev };
@@ -505,6 +517,7 @@ export default function DashboardPage() {
           transaction_id: transactionId,
           verification_method: 'code',
         });
+        completedTrackedIdsRef.current.add(transactionId);
         trackEvent('transaction_complete', {
           transaction_id: transactionId,
           completion_type: 'verify-return',
@@ -672,6 +685,7 @@ export default function DashboardPage() {
         });
       } else if (type === 'COMPLETE_EXCHANGE') {
         await handleAction(request.id, 'complete', 'Transaction marked as completed.');
+        completedTrackedIdsRef.current.add(request.id);
         trackEvent('transaction_complete', {
           transaction_id: request.id,
           completion_type: 'COMPLETE_EXCHANGE',
@@ -682,6 +696,7 @@ export default function DashboardPage() {
           transaction_id: request.id,
           fallback_step: 'CONFIRM_RETURN',
         });
+        completedTrackedIdsRef.current.add(request.id);
         trackEvent('transaction_complete', {
           transaction_id: request.id,
           completion_type: 'CONFIRM_RETURN',

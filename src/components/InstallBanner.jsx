@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Download, X } from 'lucide-react';
 import {
@@ -9,6 +9,15 @@ import {
   isRunningStandalone,
   isIOSSafari,
 } from '../utils/pwa';
+import { trackEvent } from '../utils/analytics';
+
+function getPlatform(isIos) {
+  if (isIos) return 'ios';
+  if (typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent || '')) {
+    return 'android';
+  }
+  return 'desktop';
+}
 
 export {
   DEFAULT_INSTALL_COPY,
@@ -33,6 +42,10 @@ export default function InstallBanner({
   const [isIOS, setIsIOS] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
+  const isIOSRef = useRef(false);
+  const hasTrackedShownRef = useRef(false);
+  const hasTrackedInstallRef = useRef(false);
+
   useEffect(() => {
     // 1. Check if already installed
     if (isRunningStandalone()) {
@@ -52,6 +65,7 @@ export default function InstallBanner({
     // 3. Detect iOS Safari
     const iosDevice = isIOSSafari();
     setIsIOS(iosDevice);
+    isIOSRef.current = iosDevice;
 
     // 4. Listen for beforeinstallprompt (Android / Desktop Chrome / Edge)
     const handleBeforeInstallPrompt = (e) => {
@@ -63,6 +77,10 @@ export default function InstallBanner({
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
+      if (!hasTrackedInstallRef.current) {
+        hasTrackedInstallRef.current = true;
+        trackEvent('pwa_install', { platform: getPlatform(isIOSRef.current), outcome: 'accepted' });
+      }
     };
 
     // 6. Listen for display-mode changes (e.g. user installs or launches installed instance)
@@ -89,6 +107,7 @@ export default function InstallBanner({
   }, []);
 
   const handleDismiss = () => {
+    trackEvent('install_banner_dismissed', { platform: getPlatform(isIOSRef.current) });
     try {
       localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_DURATION_MS));
     } catch {
@@ -104,6 +123,10 @@ export default function InstallBanner({
       const choiceResult = await deferredPrompt.userChoice;
       if (choiceResult && choiceResult.outcome === 'accepted') {
         setIsInstalled(true);
+        if (!hasTrackedInstallRef.current) {
+          hasTrackedInstallRef.current = true;
+          trackEvent('pwa_install', { platform: getPlatform(isIOSRef.current), outcome: 'accepted' });
+        }
       }
     } catch (err) {
       console.error('[InstallBanner] Install prompt failed:', err);
@@ -119,6 +142,14 @@ export default function InstallBanner({
   // - Show if on iOS Safari (manual flow) OR beforeinstallprompt has fired and prompt is stashed
   const isLoginRoute = location.pathname === '/login';
   const shouldShow = !isLoginRoute && !isInstalled && !isDismissed && (isIOS || deferredPrompt !== null);
+
+  // Track banner impression when it actually becomes visible to the user
+  useEffect(() => {
+    if (shouldShow && !hasTrackedShownRef.current) {
+      hasTrackedShownRef.current = true;
+      trackEvent('install_banner_shown', { platform: getPlatform(isIOSRef.current) });
+    }
+  }, [shouldShow, isIOS]);
 
   if (!shouldShow) {
     return null;

@@ -34,6 +34,16 @@ export const EVENT_SCHEMAS = {
 
   // Sprint 2: Safe WhatsApp Click
   contact_reveal_click: ['transaction_id', 'role', 'listing_id', 'listing_type'],
+
+  // Sprint 3: PWA Lifecycle
+  install_banner_shown: ['platform'],
+  install_banner_dismissed: ['platform'],
+  pwa_install: ['platform', 'outcome'],
+
+  // Sprint 3: Web Push Lifecycle
+  push_subscribe: [],
+  push_unsubscribe: [],
+  push_test_sent: [],
 };
 
 /**

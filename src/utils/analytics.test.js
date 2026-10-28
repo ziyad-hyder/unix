@@ -34,7 +34,7 @@ describe('analytics.js test suite', () => {
     console.log = originalConsoleLog;
   });
 
-  test('EVENT_SCHEMAS defines allowlists for Sprint 1 & Sprint 2 events', () => {
+  test('EVENT_SCHEMAS defines allowlists for Sprint 1, Sprint 2 & Sprint 3 events', () => {
     assert.deepStrictEqual(EVENT_SCHEMAS.login, ['method']);
     assert.deepStrictEqual(EVENT_SCHEMAS.sign_up, ['method']);
     assert.deepStrictEqual(EVENT_SCHEMAS.error_shown, ['error_code']);
@@ -56,6 +56,12 @@ describe('analytics.js test suite', () => {
     assert.deepStrictEqual(EVENT_SCHEMAS.transaction_dispute, ['transaction_id', 'listing_id']);
     assert.deepStrictEqual(EVENT_SCHEMAS.transaction_complete, ['transaction_id', 'completion_type']);
     assert.deepStrictEqual(EVENT_SCHEMAS.contact_reveal_click, ['transaction_id', 'role', 'listing_id', 'listing_type']);
+    assert.deepStrictEqual(EVENT_SCHEMAS.install_banner_shown, ['platform']);
+    assert.deepStrictEqual(EVENT_SCHEMAS.install_banner_dismissed, ['platform']);
+    assert.deepStrictEqual(EVENT_SCHEMAS.pwa_install, ['platform', 'outcome']);
+    assert.deepStrictEqual(EVENT_SCHEMAS.push_subscribe, []);
+    assert.deepStrictEqual(EVENT_SCHEMAS.push_unsubscribe, []);
+    assert.deepStrictEqual(EVENT_SCHEMAS.push_test_sent, []);
   });
 
   test('trackEvent forwards only allowlisted keys and drops unlisted/PII parameters', () => {
@@ -176,6 +182,67 @@ describe('analytics.js test suite', () => {
     assert.deepStrictEqual(capturedEvents[0].params, {
       search_term: 'need drafter contact [phone] at [email]',
     });
+  });
+
+  test('pwa events track only allowed parameters and drop unwanted data', () => {
+    trackEvent('install_banner_shown', {
+      platform: 'android',
+      user_id: 12345,
+    });
+    assert.strictEqual(capturedEvents.length, 1);
+    assert.deepStrictEqual(capturedEvents[0].params, { platform: 'android' });
+    assert.strictEqual(capturedEvents[0].params.user_id, undefined);
+
+    trackEvent('install_banner_dismissed', {
+      platform: 'ios',
+      extra: 'drop_me',
+    });
+    assert.strictEqual(capturedEvents.length, 2);
+    assert.deepStrictEqual(capturedEvents[1].params, { platform: 'ios' });
+
+    trackEvent('pwa_install', {
+      platform: 'desktop',
+      outcome: 'accepted',
+      userAgent: 'Mozilla/...',
+    });
+    assert.strictEqual(capturedEvents.length, 3);
+    assert.deepStrictEqual(capturedEvents[2].params, { platform: 'desktop', outcome: 'accepted' });
+    assert.strictEqual(capturedEvents[2].params.userAgent, undefined);
+  });
+
+  test('push events drop all params to ensure zero token/endpoint leakage', () => {
+    trackEvent('push_subscribe', {
+      endpoint: 'https://fcm.googleapis.com/fcm/send/...',
+      auth: 'secret_key',
+    });
+    assert.strictEqual(capturedEvents.length, 1);
+    assert.deepStrictEqual(capturedEvents[0].params, {});
+
+    trackEvent('push_unsubscribe', {
+      subscription_id: 'sub-123',
+    });
+    assert.strictEqual(capturedEvents.length, 2);
+    assert.deepStrictEqual(capturedEvents[1].params, {});
+
+    trackEvent('push_test_sent', {
+      device_token: 'tok-xyz',
+    });
+    assert.strictEqual(capturedEvents.length, 3);
+    assert.deepStrictEqual(capturedEvents[2].params, {});
+  });
+
+  test('transaction_complete correctly allows auto_complete completion_type', () => {
+    trackEvent('transaction_complete', {
+      transaction_id: 101,
+      completion_type: 'auto_complete',
+      sensitive_timer_data: '48h_elapsed',
+    });
+    assert.strictEqual(capturedEvents.length, 1);
+    assert.deepStrictEqual(capturedEvents[0].params, {
+      transaction_id: 101,
+      completion_type: 'auto_complete',
+    });
+    assert.strictEqual(capturedEvents[0].params.sensitive_timer_data, undefined);
   });
 
   test('trackEvent fails silently when window.gtag is undefined or throws', () => {
